@@ -17,7 +17,7 @@ import (
 	"github.com/aof-framework/aof-cli/internal/model"
 )
 
-const Version = "0.3.0"
+const Version = "0.3.1"
 
 func Run(args []string, in io.Reader, out, errOut io.Writer) int {
 	if len(args) == 0 {
@@ -54,7 +54,7 @@ func printHelp(w io.Writer) {
 
 func printVersion(w io.Writer) {
 	fmt.Fprintf(w, "AOF CLI v%s\n", Version)
-	fmt.Fprintln(w, "Release: Semantic Fidelity & Adoption Hardening")
+	fmt.Fprintln(w, "Release: Canonical Semantic Coverage")
 	fmt.Fprintln(w, "AOF Specification v1.0 LTS")
 	fmt.Fprintln(w, "Canonical Upstream: https://github.com/aof-framework/aof")
 }

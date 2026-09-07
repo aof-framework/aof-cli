@@ -86,13 +86,22 @@ type ObjectSelection struct {
 }
 
 type Requirement struct {
-	ID                 string
-	Domain             string
-	NormativeLevel     string
-	AppliesTo          string
-	Profiles           []string
-	VerificationMethod string
-	RequiredEvidence   []string
+	ID                          string
+	Domain                      string
+	Statement                   string
+	NormativeLevel              string
+	Applicability               string
+	ApplicabilityReason         string
+	AppliesTo                   string
+	Profiles                    []string
+	VerificationMethod          string
+	RequiredEvidence            []string
+	RelatedInvariants           []string
+	RelatedObjects              []string
+	VerificationDisposition     string
+	EvidenceDisposition         string
+	InvariantMappingDisposition string
+	ObjectMappingDisposition    string
 }
 
 type ProfileSelection struct {

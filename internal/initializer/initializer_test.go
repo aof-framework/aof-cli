@@ -18,7 +18,7 @@ func testModel() model.BootstrapModel {
 }
 func TestBuildAndApply(t *testing.T) {
 	d := t.TempDir()
-	p, err := BuildPlan(testModel(), "0.3.0")
+	p, err := BuildPlan(testModel(), "0.3.1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,11 +41,23 @@ func TestBuildAndApply(t *testing.T) {
 	if v["schema_type"] != "AOFCLIBootstrapManifest" || v["claimed_conformance"] != false {
 		t.Fatalf("bad manifest: %v", v)
 	}
+	if v["registered_invariants"] != float64(162) || v["registered_requirements"] != float64(332) || v["stable_semantic_ids"] != float64(494) {
+		t.Fatalf("manifest lacks canonical coverage gate: %v", v)
+	}
+	requirements, err := os.ReadFile(filepath.Join(d, ".aof/requirements.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{"requirement_count: 332", "stable_semantic_id_count: 494", `requirement_id: "AOF-AGT-001"`, `requirement_id: "AOF-VER-018"`} {
+		if !strings.Contains(string(requirements), expected) {
+			t.Fatalf("requirements projection missing %q", expected)
+		}
+	}
 }
 func TestConflictAbortsBeforeWrites(t *testing.T) {
 	d := t.TempDir()
 	_ = os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing"), 0o644)
-	p, _ := BuildPlan(testModel(), "0.3.0")
+	p, _ := BuildPlan(testModel(), "0.3.1")
 	err := Apply(d, p)
 	var ce *ConflictError
 	if !errors.As(err, &ce) {
@@ -57,7 +69,7 @@ func TestConflictAbortsBeforeWrites(t *testing.T) {
 }
 func TestSecondInit(t *testing.T) {
 	d := t.TempDir()
-	p, _ := BuildPlan(testModel(), "0.3.0")
+	p, _ := BuildPlan(testModel(), "0.3.1")
 	if err := Apply(d, p); err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +90,7 @@ func TestPreserveExistingAgentsUsesSidecar(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing project instructions"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := BuildPlan(testModel(), "0.3.0")
+	p, err := BuildPlan(testModel(), "0.3.1")
 	if err != nil {
 		t.Fatal(err)
 	}

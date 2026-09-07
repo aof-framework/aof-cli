@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/aof-framework/aof-cli/internal/canonical"
 	"github.com/aof-framework/aof-cli/internal/model"
 	bootstraptemplates "github.com/aof-framework/aof-cli/templates"
 )
@@ -20,10 +21,12 @@ type File struct {
 type Plan struct{ Files []File }
 
 const (
-	canonicalRepo               = "https://github.com/aof-framework/aof"
-	canonicalSpecPath           = "specification/AOF-v1.0-Framework-Specification.md"
-	canonicalSpecSHA256         = "57ddbd64671eea615535b20f109064d96fb262e781969ef757a6f4d5efa869d5"
-	canonicalSchemaBundleSHA256 = "d9a433c5d5549e61600eb34d84fe8e4d9802b4211542765fb810c8a56baeb975"
+	canonicalRepo                 = "https://github.com/aof-framework/aof"
+	canonicalSpecPath             = "specification/AOF-v1.0-Framework-Specification.md"
+	canonicalSpecSHA256           = canonical.PublishedSpecificationSHA256
+	canonicalSemanticFreezeSHA256 = canonical.SemanticFreezeSHA256
+	canonicalSourceCommit         = canonical.SourceCommit
+	canonicalSchemaBundleSHA256   = "d9a433c5d5549e61600eb34d84fe8e4d9802b4211542765fb810c8a56baeb975"
 )
 
 func BuildPlan(m model.BootstrapModel, cliVersion string) (Plan, error) {
@@ -161,7 +164,7 @@ func renderConfigYAML(a model.AdoptionDefinition) string {
 	writeListIndented(&b, "  domain_profiles", a.Profile.DomainProfiles)
 	writeListIndented(&b, "  overlays", a.Profile.Overlays)
 	b.WriteString("  claimed_profile: null\n  conformance_claim_status: \"none\"\n")
-	fmt.Fprintf(&b, "upstream:\n  repository: %q\n  specification: %q\n  specification_sha256: %q\n  schema_bundle_sha256: %q\nadoption:\n  mode: %q\n", canonicalRepo, canonicalSpecPath, canonicalSpecSHA256, canonicalSchemaBundleSHA256, a.Mode)
+	fmt.Fprintf(&b, "upstream:\n  repository: %q\n  source_commit: %q\n  specification: %q\n  published_specification_sha256: %q\n  semantic_freeze_sha256: %q\n  schema_bundle_sha256: %q\nadoption:\n  mode: %q\n", canonicalRepo, canonicalSourceCommit, canonicalSpecPath, canonicalSpecSHA256, canonicalSemanticFreezeSHA256, canonicalSchemaBundleSHA256, a.Mode)
 	return b.String()
 }
 func renderAdoptionYAML(a model.AdoptionDefinition) string {
@@ -197,11 +200,31 @@ func renderApplicabilityYAML(a model.AdoptionDefinition) string {
 }
 func renderRequirementsYAML(a model.AdoptionDefinition) string {
 	var b strings.Builder
+	fmt.Fprintf(&b, "canonical_universe:\n  invariant_count: %d\n  requirement_count: %d\n  stable_semantic_id_count: %d\n  source_commit: %q\nprojection:\n  target_base_profile: %q\n  unselected_requirement_disposition: %q\n  absent_verification_mapping: %q\n  absent_evidence_mapping: %q\n  absent_invariant_mapping: %q\n  absent_object_mapping: %q\n", canonical.ExpectedInvariantCount, canonical.ExpectedRequirementCount, canonical.ExpectedSemanticIDCount, canonicalSourceCommit, a.Profile.TargetBaseProfile, "conditional_pending_profile_and_scope_evaluation", "CanonicalMappingNotAsserted", "CanonicalMappingNotAsserted", "CanonicalMappingNotAsserted", "CanonicalMappingNotAsserted")
 	b.WriteString("requirements:\n")
 	for _, r := range a.Requirements {
-		fmt.Fprintf(&b, "  - requirement_id: %q\n    domain: %q\n    normative_level: %q\n    applies_to: %q\n    verification_method: %q\n", r.ID, r.Domain, r.NormativeLevel, r.AppliesTo, r.VerificationMethod)
-		writeListIndented(&b, "    profiles", r.Profiles)
-		writeListIndented(&b, "    required_evidence", r.RequiredEvidence)
+		fmt.Fprintf(&b, "  - requirement_id: %q\n    domain: %q\n    normative_level: %q\n    applicability: %q\n", r.ID, r.Domain, r.NormativeLevel, r.Applicability)
+		if r.Applicability == model.ApplicabilityApplicable {
+			fmt.Fprintf(&b, "    applicability_reason: %q\n", r.ApplicabilityReason)
+		}
+		if r.VerificationDisposition != "CanonicalMappingNotAsserted" {
+			fmt.Fprintf(&b, "    verification_method: %q\n    verification_disposition: %q\n", r.VerificationMethod, r.VerificationDisposition)
+		}
+		if r.EvidenceDisposition != "CanonicalMappingNotAsserted" {
+			fmt.Fprintf(&b, "    evidence_disposition: %q\n", r.EvidenceDisposition)
+		}
+		if len(r.Profiles) > 0 {
+			writeListIndented(&b, "    profiles", r.Profiles)
+		}
+		if len(r.RequiredEvidence) > 0 {
+			writeListIndented(&b, "    required_evidence", r.RequiredEvidence)
+		}
+		if len(r.RelatedInvariants) > 0 {
+			writeListIndented(&b, "    related_invariants", r.RelatedInvariants)
+		}
+		if len(r.RelatedObjects) > 0 {
+			writeListIndented(&b, "    related_canonical_objects", r.RelatedObjects)
+		}
 	}
 	return b.String()
 }
@@ -219,7 +242,7 @@ func renderCapabilityYAML(p model.ProjectDefinition) string {
 	return b.String()
 }
 func renderProvenanceJSON() string {
-	return fmt.Sprintf("{\n  \"aof_specification\": \"1.0\",\n  \"aof_release\": \"LTS\",\n  \"canonical_repository\": %q,\n  \"canonical_specification_path\": %q,\n  \"canonical_specification_sha256\": %q,\n  \"canonical_schema_bundle_sha256\": %q,\n  \"source_commit\": null,\n  \"note\": \"Checksums pin the embedded LTS artifacts; no unverified Git commit is asserted.\"\n}\n", canonicalRepo, canonicalSpecPath, canonicalSpecSHA256, canonicalSchemaBundleSHA256)
+	return fmt.Sprintf("{\n  \"aof_specification\": \"1.0\",\n  \"aof_release\": \"LTS\",\n  \"canonical_repository\": %q,\n  \"canonical_specification_path\": %q,\n  \"published_specification_sha256\": %q,\n  \"semantic_freeze_sha256\": %q,\n  \"canonical_schema_bundle_sha256\": %q,\n  \"source_commit\": %q,\n  \"registered_invariants\": %d,\n  \"registered_requirements\": %d,\n  \"stable_semantic_ids\": %d,\n  \"note\": \"Published artifact and declared semantic-freeze hashes are recorded separately; generated adoption state is not a conformance claim.\"\n}\n", canonicalRepo, canonicalSpecPath, canonicalSpecSHA256, canonicalSemanticFreezeSHA256, canonicalSchemaBundleSHA256, canonicalSourceCommit, canonical.ExpectedInvariantCount, canonical.ExpectedRequirementCount, canonical.ExpectedSemanticIDCount)
 }
 
 func renderPlanes(m model.BootstrapModel) string {

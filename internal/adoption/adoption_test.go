@@ -109,4 +109,34 @@ func TestRequirementRegistryContainsTraceability(t *testing.T) {
 			t.Fatalf("missing %s", id)
 		}
 	}
+	if len(a.Requirements) != 332 {
+		t.Fatalf("canonical requirement universe=%d want=332", len(a.Requirements))
+	}
+}
+
+func TestRequirementProjectionRetainsCanonicalNormativeMeaning(t *testing.T) {
+	a := Build(model.ProfileCore, baseProject(), nil)
+	byID := map[string]model.Requirement{}
+	for _, requirement := range a.Requirements {
+		if _, duplicate := byID[requirement.ID]; duplicate {
+			t.Fatalf("duplicate canonical requirement %s", requirement.ID)
+		}
+		byID[requirement.ID] = requirement
+		if requirement.Applicability != model.ApplicabilityApplicable && requirement.Applicability != model.ApplicabilityConditional && requirement.Applicability != model.ApplicabilityNotApplicable {
+			t.Fatalf("%s has invalid applicability %q", requirement.ID, requirement.Applicability)
+		}
+	}
+	for id, level := range map[string]string{
+		"AOF-AGT-002":  "MUST NOT",
+		"AOF-AGT-006":  "SHOULD",
+		"AOF-ARCH-001": "MUST",
+		"AOF-ARCH-011": "SHOULD",
+	} {
+		if got := byID[id].NormativeLevel; got != level {
+			t.Fatalf("%s normative=%q want=%q", id, got, level)
+		}
+	}
+	if got := byID["AOF-VER-018"].Applicability; got != model.ApplicabilityConditional {
+		t.Fatalf("unselected canonical requirement silently disappeared or was overclaimed: %q", got)
+	}
 }

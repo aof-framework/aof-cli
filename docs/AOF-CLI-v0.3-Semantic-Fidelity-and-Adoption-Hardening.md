@@ -1,4 +1,4 @@
-# AOF CLI v0.3.0 — Semantic Fidelity & Adoption Hardening
+# AOF CLI v0.3.x — Semantic Fidelity & Canonical Coverage
 
 ## Status
 
@@ -98,6 +98,21 @@ Agent type never implies Authority.
 
 `.aof/requirements.yaml` and `aof/requirements/registry.yaml` index applicable AOF requirement IDs. The specification remains normative; the generated registry is an index.
 
+The embedded canonical baseline is hard-gated at:
+
+```text
+registered_invariants == 162
+registered_requirements == 332
+stable_semantic_ids == 494
+canonical_traceability_edges == 352
+```
+
+The gate validates exact ID-set hashes in addition to counts. It rejects duplicate or malformed IDs, invalid normative classifications, unknown edge endpoints, broken profiles/canonical objects, and silent mapping gaps.
+
+Every canonical requirement participates in project projection. Requirements selected by a control/profile rule become `applicable`; all other requirements remain explicitly `conditional` pending profile and project-scope evaluation. They never silently disappear, and initialization does not treat a conditional item as implemented, verified, or conformant.
+
+Canonical upstream intentionally does not assert a direct invariant, verification, Evidence, or canonical-object mapping for every item. The CLI preserves those absences using explicit `CanonicalMappingNotAsserted` dispositions instead of inventing heuristic edges. This satisfies semantic accounting while keeping upstream traceability debt visible.
+
 Traceability direction:
 
 ```text
@@ -144,6 +159,8 @@ Generated provenance records:
 - schema bundle SHA-256.
 
 No unverified Git commit SHA is invented.
+
+The registry import pins upstream commit `58ebca64759e2ec66da7a6cab05c3881e39127ca`. Provenance records the published specification checksum separately from the semantic-freeze checksum declared by upstream, avoiding the previous path/artifact ambiguity.
 
 ## Conformance boundary
 

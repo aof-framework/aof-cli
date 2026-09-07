@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/aof-framework/aof-cli/internal/canonical"
 	"github.com/aof-framework/aof-cli/internal/model"
 )
 
@@ -148,7 +149,7 @@ func BuildWithOptions(profile string, p model.ProjectDefinition, capabilities ma
 	}
 
 	objects := buildObjects(p, profile, secure, opts.HighAssurance, consequential)
-	requirements := requirementRegistry(controls, profile, secure, opts.HighAssurance)
+	requirements := requirementRegistry(controls, secure, opts.HighAssurance)
 	skills := []string{"aof-core", "aof-adoption", "aof-agent-design", "aof-authority", "aof-policy", "aof-risk", "aof-state-trace", "aof-conformance"}
 	if consequential {
 		skills = append(skills, "aof-execution", "aof-evidence-verification")
@@ -231,53 +232,58 @@ func buildObjects(p model.ProjectDefinition, profile string, secure, high, conse
 	return objects
 }
 
-func requirementRegistry(controls map[string]model.ControlSelection, profile string, secure, high bool) []model.Requirement {
+func requirementRegistry(controls map[string]model.ControlSelection, secure, high bool) []model.Requirement {
+	registry := canonical.MustLoad()
 	seen := map[string]bool{}
-	out := []model.Requirement{}
 	for _, c := range controls {
 		for _, id := range c.RequirementIDs {
-			if seen[id] {
-				continue
+			if _, ok := registry.Requirement(id); !ok {
+				panic("AOF CLI control references unknown canonical requirement " + id)
 			}
 			seen[id] = true
-			out = append(out, requirementFor(id, profile))
 		}
 	}
 	for _, id := range []string{"AOF-PRF-001", "AOF-PRF-002", "AOF-PRF-006"} {
-		if !seen[id] {
-			seen[id] = true
-			out = append(out, requirementFor(id, profile))
+		seen[id] = true
+	}
+	if secure {
+		seen["AOF-PRF-004"] = true
+	}
+	if high {
+		seen["AOF-PRF-005"] = true
+	}
+	out := make([]model.Requirement, 0, len(registry.Requirements))
+	for _, requirement := range registry.Requirements {
+		applicability := model.ApplicabilityConditional
+		reason := "canonical requirement retained; applicability requires profile and project-scope evaluation"
+		if seen[requirement.ID] {
+			applicability = model.ApplicabilityApplicable
+			reason = "selected by an applicable project control or profile rule"
 		}
+		out = append(out, requirementFor(requirement, applicability, reason))
 	}
-	if secure && !seen["AOF-PRF-004"] {
-		out = append(out, requirementFor("AOF-PRF-004", profile))
-	}
-	if high && !seen["AOF-PRF-005"] {
-		out = append(out, requirementFor("AOF-PRF-005", profile))
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out
 }
 
-func requirementFor(id, profile string) model.Requirement {
-	domain := "Core"
-	switch {
-	case strings.Contains(id, "AUTH"):
-		domain = "Authority"
-	case strings.Contains(id, "POL"):
-		domain = "Policy"
-	case strings.Contains(id, "RISK"):
-		domain = "Risk"
-	case strings.Contains(id, "VER"):
-		domain = "Verification"
-	case strings.Contains(id, "TRC"):
-		domain = "Trace"
-	case strings.Contains(id, "ARCH"):
-		domain = "Architecture"
-	case strings.Contains(id, "PRF"):
-		domain = "Profile"
+func requirementFor(requirement canonical.Requirement, applicability, reason string) model.Requirement {
+	appliesTo := strings.Join(requirement.AppliesTo, ", ")
+	if appliesTo == "" {
+		appliesTo = "profile and project scope"
 	}
-	return model.Requirement{ID: id, Domain: domain, NormativeLevel: model.NormativeMust, AppliesTo: "project adoption", Profiles: []string{profile}, VerificationMethod: "implementation/conformance review", RequiredEvidence: []string{"project governance artifacts", "implementation evidence"}}
+	verification := strings.Join(requirement.VerificationMethods, ", ")
+	if verification == "" {
+		verification = requirement.VerificationDisposition
+	}
+	return model.Requirement{
+		ID: requirement.ID, Domain: requirement.Domain, Statement: requirement.Statement,
+		NormativeLevel: requirement.NormativeLevel, Applicability: applicability,
+		ApplicabilityReason: reason, AppliesTo: appliesTo, Profiles: append([]string(nil), requirement.Profiles...),
+		VerificationMethod: verification, RequiredEvidence: append([]string(nil), requirement.RequiredEvidence...),
+		RelatedInvariants:       append([]string(nil), requirement.RelatedInvariants...),
+		RelatedObjects:          append([]string(nil), requirement.RelatedCanonicalObjects...),
+		VerificationDisposition: requirement.VerificationDisposition, EvidenceDisposition: requirement.EvidenceDisposition,
+		InvariantMappingDisposition: requirement.InvariantMappingDisposition, ObjectMappingDisposition: requirement.ObjectMappingDisposition,
+	}
 }
 
 func contains(xs []string, want string) bool {
