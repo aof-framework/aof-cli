@@ -12,10 +12,10 @@ func TestVersion(t *testing.T) {
 	if code := Run([]string{"version"}, strings.NewReader(""), &out, &errOut); code != 0 {
 		t.Fatal(code)
 	}
-	if !strings.Contains(out.String(), "AOF CLI v0.3.1") {
+	if !strings.Contains(out.String(), "AOF CLI v0.3.2") {
 		t.Fatalf("unexpected: %s", out.String())
 	}
-	if !strings.Contains(out.String(), "Release: Canonical Semantic Coverage") {
+	if !strings.Contains(out.String(), "Release: Exact Canonical Source Alignment") {
 		t.Fatalf("unexpected release label: %s", out.String())
 	}
 }

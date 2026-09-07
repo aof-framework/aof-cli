@@ -1,6 +1,8 @@
 package initializer
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -9,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/aof-framework/aof-cli/internal/adoption"
+	"github.com/aof-framework/aof-cli/internal/canonical"
 	"github.com/aof-framework/aof-cli/internal/model"
 )
 
@@ -16,9 +19,31 @@ func testModel() model.BootstrapModel {
 	p := model.ProjectDefinition{Name: "itsm-backend", Language: "Go", Type: "backend", Domain: "itsm", AgentTypes: []string{"LLM"}, AI: model.AIUsage{Enabled: true, Analysis: true, Recommendation: true}, Criticality: "moderate", DataSensitivity: "internal", AdoptionMode: "greenfield"}
 	return model.BootstrapModel{Project: p, Adoption: adoption.Build(model.ProfileCore, p, nil)}
 }
+
+func TestGeneratedCanonicalSchemasMatchUpstreamIndex(t *testing.T) {
+	plan, err := BuildPlan(testModel(), "0.3.2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := map[string][]byte{}
+	for _, file := range plan.Files {
+		files[file.Path] = file.Content
+	}
+	for _, object := range canonical.MustLoad().CanonicalObjects {
+		path := "aof/schemas/" + object.Schema
+		data, ok := files[path]
+		if !ok {
+			t.Fatalf("generated schema missing: %s", path)
+		}
+		sum := sha256.Sum256(data)
+		if got := hex.EncodeToString(sum[:]); got != object.ActiveSHA256 {
+			t.Fatalf("generated schema %s differs from active upstream file: got %s want %s", path, got, object.ActiveSHA256)
+		}
+	}
+}
 func TestBuildAndApply(t *testing.T) {
 	d := t.TempDir()
-	p, err := BuildPlan(testModel(), "0.3.1")
+	p, err := BuildPlan(testModel(), "0.3.2")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,20 +69,32 @@ func TestBuildAndApply(t *testing.T) {
 	if v["registered_invariants"] != float64(162) || v["registered_requirements"] != float64(332) || v["stable_semantic_ids"] != float64(494) {
 		t.Fatalf("manifest lacks canonical coverage gate: %v", v)
 	}
+	for _, key := range []string{"source_checkout_commit", "active_specification_sha256", "original_semantic_baseline_commit", "original_semantic_baseline_sha256", "active_schema_checksums_sha256"} {
+		if v[key] == nil || v[key] == "" {
+			t.Fatalf("manifest lacks explicit upstream provenance %s: %v", key, v)
+		}
+	}
 	requirements, err := os.ReadFile(filepath.Join(d, ".aof/requirements.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, expected := range []string{"requirement_count: 332", "stable_semantic_id_count: 494", `requirement_id: "AOF-AGT-001"`, `requirement_id: "AOF-VER-018"`} {
+	for _, expected := range []string{"requirement_count: 332", "stable_semantic_id_count: 494", `requirement_id: "AOF-AGT-001"`, `statement: "Agent MUST operate as bounded actor within applicable Governance Envelope."`, `requirement_id: "AOF-ARCH-001"`, `normative_level: "Unclassified"`, `requirement_id: "AOF-VER-018"`, `unselected_requirement_disposition: "not_evaluated"`} {
 		if !strings.Contains(string(requirements), expected) {
 			t.Fatalf("requirements projection missing %q", expected)
 		}
+	}
+	applicability, err := os.ReadFile(filepath.Join(d, ".aof/applicability.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(applicability), `metadata_classification: "non_canonical_aof_cli_process_metadata"`) || strings.Contains(string(applicability), "normative_level:") {
+		t.Fatalf("CLI planning metadata is presented as canonical semantics:\n%s", applicability)
 	}
 }
 func TestConflictAbortsBeforeWrites(t *testing.T) {
 	d := t.TempDir()
 	_ = os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing"), 0o644)
-	p, _ := BuildPlan(testModel(), "0.3.1")
+	p, _ := BuildPlan(testModel(), "0.3.2")
 	err := Apply(d, p)
 	var ce *ConflictError
 	if !errors.As(err, &ce) {
@@ -69,7 +106,7 @@ func TestConflictAbortsBeforeWrites(t *testing.T) {
 }
 func TestSecondInit(t *testing.T) {
 	d := t.TempDir()
-	p, _ := BuildPlan(testModel(), "0.3.1")
+	p, _ := BuildPlan(testModel(), "0.3.2")
 	if err := Apply(d, p); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +127,7 @@ func TestPreserveExistingAgentsUsesSidecar(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing project instructions"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := BuildPlan(testModel(), "0.3.1")
+	p, err := BuildPlan(testModel(), "0.3.2")
 	if err != nil {
 		t.Fatal(err)
 	}

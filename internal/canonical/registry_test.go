@@ -30,3 +30,34 @@ func TestEveryCanonicalRequirementIsResolvable(t *testing.T) {
 		}
 	}
 }
+
+func TestCanonicalRequirementClassificationIsNeverRewritten(t *testing.T) {
+	registry := MustLoad()
+	unclassified := 0
+	for _, requirement := range registry.Requirements {
+		if requirement.NormativeLevel == "Unclassified" {
+			unclassified++
+		}
+	}
+	if unclassified != 17 {
+		t.Fatalf("upstream Unclassified requirements=%d want=17", unclassified)
+	}
+	for _, id := range []string{"AOF-ARCH-001", "AOF-ARCH-011", "AOF-ARCH-017"} {
+		requirement, ok := registry.Requirement(id)
+		if !ok || requirement.NormativeLevel != "Unclassified" {
+			t.Fatalf("%s was reclassified: %+v", id, requirement)
+		}
+	}
+}
+
+func TestCanonicalObjectsComeFromUpstreamSchemaIndex(t *testing.T) {
+	registry := MustLoad()
+	if got := len(registry.CanonicalObjects); got != ExpectedSchemaCount {
+		t.Fatalf("schema contracts=%d want=%d", got, ExpectedSchemaCount)
+	}
+	for _, object := range registry.CanonicalObjects {
+		if object.Schema == "" || object.ID == "" || len(object.IndexSHA256) != 64 || len(object.ActiveSHA256) != 64 {
+			t.Fatalf("incomplete upstream schema index record: %+v", object)
+		}
+	}
+}

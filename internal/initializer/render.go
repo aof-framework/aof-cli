@@ -21,12 +21,12 @@ type File struct {
 type Plan struct{ Files []File }
 
 const (
-	canonicalRepo                 = "https://github.com/aof-framework/aof"
-	canonicalSpecPath             = "specification/AOF-v1.0-Framework-Specification.md"
-	canonicalSpecSHA256           = canonical.PublishedSpecificationSHA256
-	canonicalSemanticFreezeSHA256 = canonical.SemanticFreezeSHA256
-	canonicalSourceCommit         = canonical.SourceCommit
-	canonicalSchemaBundleSHA256   = "d9a433c5d5549e61600eb34d84fe8e4d9802b4211542765fb810c8a56baeb975"
+	canonicalRepo                       = "https://github.com/aof-framework/aof"
+	canonicalSpecPath                   = "specification/AOF-v1.0-Framework-Specification.md"
+	canonicalSpecSHA256                 = canonical.ActiveSpecificationSHA256
+	canonicalOriginalBaselineSHA256     = canonical.OriginalBaselineSHA256
+	canonicalSourceCommit               = canonical.SourceCheckoutCommit
+	canonicalOriginalSchemaBundleSHA256 = "d9a433c5d5549e61600eb34d84fe8e4d9802b4211542765fb810c8a56baeb975"
 )
 
 func BuildPlan(m model.BootstrapModel, cliVersion string) (Plan, error) {
@@ -164,7 +164,7 @@ func renderConfigYAML(a model.AdoptionDefinition) string {
 	writeListIndented(&b, "  domain_profiles", a.Profile.DomainProfiles)
 	writeListIndented(&b, "  overlays", a.Profile.Overlays)
 	b.WriteString("  claimed_profile: null\n  conformance_claim_status: \"none\"\n")
-	fmt.Fprintf(&b, "upstream:\n  repository: %q\n  source_commit: %q\n  specification: %q\n  published_specification_sha256: %q\n  semantic_freeze_sha256: %q\n  schema_bundle_sha256: %q\nadoption:\n  mode: %q\n", canonicalRepo, canonicalSourceCommit, canonicalSpecPath, canonicalSpecSHA256, canonicalSemanticFreezeSHA256, canonicalSchemaBundleSHA256, a.Mode)
+	fmt.Fprintf(&b, "upstream:\n  repository: %q\n  source_checkout_commit: %q\n  specification: %q\n  editorial_revision: %q\n  active_specification_sha256: %q\n  original_semantic_baseline_commit: %q\n  original_semantic_baseline_sha256: %q\n  active_schema_checksums_sha256: %q\n  original_schema_bundle_sha256: %q\nadoption:\n  mode: %q\n", canonicalRepo, canonicalSourceCommit, canonicalSpecPath, "LTS-Editorial-2", canonicalSpecSHA256, canonical.OriginalBaselineCommit, canonicalOriginalBaselineSHA256, canonical.ActiveSchemaChecksumsSHA256, canonicalOriginalSchemaBundleSHA256, a.Mode)
 	return b.String()
 }
 func renderAdoptionYAML(a model.AdoptionDefinition) string {
@@ -179,10 +179,11 @@ func renderAdoptionYAML(a model.AdoptionDefinition) string {
 }
 func renderApplicabilityYAML(a model.AdoptionDefinition) string {
 	var b strings.Builder
+	b.WriteString("metadata_classification: \"non_canonical_aof_cli_process_metadata\"\n")
 	b.WriteString("control_families:\n")
 	for _, k := range sortedControlKeys(a.Controls) {
 		c := a.Controls[k]
-		fmt.Fprintf(&b, "  %s:\n    applicability: %q\n    normative_level: %q\n    capability: %q\n    adoption_state: %q\n    implementation_state: %q\n    verification_state: %q\n    reason: %q\n", k, c.Applicability, c.NormativeLevel, c.Capability, c.AdoptionState, c.ImplementationState, c.VerificationState, c.Reason)
+		fmt.Fprintf(&b, "  %s:\n    applicability: %q\n    cli_planning_priority: %q\n    capability: %q\n    adoption_state: %q\n    implementation_state: %q\n    verification_state: %q\n    reason: %q\n", k, c.Applicability, planningPriority(c.NormativeLevel), c.Capability, c.AdoptionState, c.ImplementationState, c.VerificationState, c.Reason)
 		writeListIndented(&b, "    requirement_ids", c.RequirementIDs)
 	}
 	b.WriteString("canonical_objects:\n")
@@ -193,26 +194,17 @@ func renderApplicabilityYAML(a model.AdoptionDefinition) string {
 	sort.Strings(keys)
 	for _, k := range keys {
 		o := a.CanonicalObjects[k]
-		fmt.Fprintf(&b, "  %s:\n    applicability: %q\n    normative_level: %q\n    adoption_state: %q\n    reason: %q\n", k, o.Applicability, o.NormativeLevel, o.AdoptionState, o.Reason)
+		fmt.Fprintf(&b, "  %s:\n    applicability: %q\n    cli_planning_priority: %q\n    adoption_state: %q\n    reason: %q\n", k, o.Applicability, planningPriority(o.NormativeLevel), o.AdoptionState, o.Reason)
 		writeListIndented(&b, "    requirement_ids", o.RequirementIDs)
 	}
 	return b.String()
 }
 func renderRequirementsYAML(a model.AdoptionDefinition) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "canonical_universe:\n  invariant_count: %d\n  requirement_count: %d\n  stable_semantic_id_count: %d\n  source_commit: %q\nprojection:\n  target_base_profile: %q\n  unselected_requirement_disposition: %q\n  absent_verification_mapping: %q\n  absent_evidence_mapping: %q\n  absent_invariant_mapping: %q\n  absent_object_mapping: %q\n", canonical.ExpectedInvariantCount, canonical.ExpectedRequirementCount, canonical.ExpectedSemanticIDCount, canonicalSourceCommit, a.Profile.TargetBaseProfile, "conditional_pending_profile_and_scope_evaluation", "CanonicalMappingNotAsserted", "CanonicalMappingNotAsserted", "CanonicalMappingNotAsserted", "CanonicalMappingNotAsserted")
+	fmt.Fprintf(&b, "canonical_universe:\n  invariant_count: %d\n  requirement_count: %d\n  stable_semantic_id_count: %d\n  source_checkout_commit: %q\n  active_specification_sha256: %q\n  original_semantic_baseline_sha256: %q\nprojection:\n  classification: %q\n  target_base_profile: %q\n  unselected_requirement_disposition: %q\n  absent_source_mapping_disposition: %q\n", canonical.ExpectedInvariantCount, canonical.ExpectedRequirementCount, canonical.ExpectedSemanticIDCount, canonicalSourceCommit, canonicalSpecSHA256, canonicalOriginalBaselineSHA256, "non_canonical_aof_cli_process_metadata", a.Profile.TargetBaseProfile, "not_evaluated", "source_mapping_absent")
 	b.WriteString("requirements:\n")
 	for _, r := range a.Requirements {
-		fmt.Fprintf(&b, "  - requirement_id: %q\n    domain: %q\n    normative_level: %q\n    applicability: %q\n", r.ID, r.Domain, r.NormativeLevel, r.Applicability)
-		if r.Applicability == model.ApplicabilityApplicable {
-			fmt.Fprintf(&b, "    applicability_reason: %q\n", r.ApplicabilityReason)
-		}
-		if r.VerificationDisposition != "CanonicalMappingNotAsserted" {
-			fmt.Fprintf(&b, "    verification_method: %q\n    verification_disposition: %q\n", r.VerificationMethod, r.VerificationDisposition)
-		}
-		if r.EvidenceDisposition != "CanonicalMappingNotAsserted" {
-			fmt.Fprintf(&b, "    evidence_disposition: %q\n", r.EvidenceDisposition)
-		}
+		fmt.Fprintf(&b, "  - requirement_id: %q\n    domain: %q\n    statement: %q\n    normative_level: %q\n    canonical_status: %q\n    canonical_source: %q\n    canonical_source_line: %d\n    applicability: %q\n    applicability_reason: %q\n    verification_method: %q\n    verification_disposition: %q\n    evidence_disposition: %q\n    invariant_mapping_disposition: %q\n    object_mapping_disposition: %q\n", r.ID, r.Domain, r.Statement, r.NormativeLevel, r.CanonicalStatus, r.CanonicalSource, r.CanonicalSourceLine, r.Applicability, r.ApplicabilityReason, r.VerificationMethod, r.VerificationDisposition, r.EvidenceDisposition, r.InvariantMappingDisposition, r.ObjectMappingDisposition)
 		if len(r.Profiles) > 0 {
 			writeListIndented(&b, "    profiles", r.Profiles)
 		}
@@ -242,7 +234,7 @@ func renderCapabilityYAML(p model.ProjectDefinition) string {
 	return b.String()
 }
 func renderProvenanceJSON() string {
-	return fmt.Sprintf("{\n  \"aof_specification\": \"1.0\",\n  \"aof_release\": \"LTS\",\n  \"canonical_repository\": %q,\n  \"canonical_specification_path\": %q,\n  \"published_specification_sha256\": %q,\n  \"semantic_freeze_sha256\": %q,\n  \"canonical_schema_bundle_sha256\": %q,\n  \"source_commit\": %q,\n  \"registered_invariants\": %d,\n  \"registered_requirements\": %d,\n  \"stable_semantic_ids\": %d,\n  \"note\": \"Published artifact and declared semantic-freeze hashes are recorded separately; generated adoption state is not a conformance claim.\"\n}\n", canonicalRepo, canonicalSpecPath, canonicalSpecSHA256, canonicalSemanticFreezeSHA256, canonicalSchemaBundleSHA256, canonicalSourceCommit, canonical.ExpectedInvariantCount, canonical.ExpectedRequirementCount, canonical.ExpectedSemanticIDCount)
+	return fmt.Sprintf("{\n  \"aof_specification\": \"1.0\",\n  \"aof_release\": \"LTS\",\n  \"editorial_revision\": \"LTS-Editorial-2\",\n  \"canonical_repository\": %q,\n  \"canonical_specification_path\": %q,\n  \"active_specification_sha256\": %q,\n  \"original_semantic_baseline_commit\": %q,\n  \"original_semantic_baseline_sha256\": %q,\n  \"active_schema_checksums_sha256\": %q,\n  \"original_schema_bundle_sha256\": %q,\n  \"source_checkout_commit\": %q,\n  \"registered_invariants\": %d,\n  \"registered_requirements\": %d,\n  \"stable_semantic_ids\": %d,\n  \"projection_metadata_classification\": \"non_canonical_aof_cli_process_metadata\",\n  \"note\": \"Canonical sources are embedded byte-for-byte; generated applicability and adoption state are CLI process metadata, not AOF semantics or a conformance claim.\"\n}\n", canonicalRepo, canonicalSpecPath, canonicalSpecSHA256, canonical.OriginalBaselineCommit, canonicalOriginalBaselineSHA256, canonical.ActiveSchemaChecksumsSHA256, canonicalOriginalSchemaBundleSHA256, canonicalSourceCommit, canonical.ExpectedInvariantCount, canonical.ExpectedRequirementCount, canonical.ExpectedSemanticIDCount)
 }
 
 func renderPlanes(m model.BootstrapModel) string {
@@ -353,7 +345,7 @@ func renderGaps(m model.BootstrapModel) string {
 	for _, k := range sortedControlKeys(m.Adoption.Controls) {
 		c := m.Adoption.Controls[k]
 		if c.Applicability != model.ApplicabilityNotApplicable && (c.ImplementationState == model.ImplementationNotAssessed || c.AdoptionState == model.AdoptionUnsupported) {
-			fmt.Fprintf(&b, "- **%s** — applicability `%s`, normative `%s`, adoption `%s`, implementation `%s`, verification `%s`. %s\n", k, c.Applicability, c.NormativeLevel, c.AdoptionState, c.ImplementationState, c.VerificationState, c.Reason)
+			fmt.Fprintf(&b, "- **%s** — applicability `%s`, CLI planning priority `%s`, adoption `%s`, implementation `%s`, verification `%s`. %s\n", k, c.Applicability, planningPriority(c.NormativeLevel), c.AdoptionState, c.ImplementationState, c.VerificationState, c.Reason)
 		}
 	}
 	if len(m.Adoption.Warnings) > 0 {
@@ -429,4 +421,17 @@ func contains(xs []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func planningPriority(level string) string {
+	switch level {
+	case model.NormativeMust:
+		return "required"
+	case model.NormativeShould:
+		return "recommended"
+	case model.NormativeMay:
+		return "optional"
+	default:
+		return "unclassified"
+	}
 }

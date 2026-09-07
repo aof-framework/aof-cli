@@ -3,40 +3,40 @@
   "profiles": [
     {
       "id": "AOF-Core",
-      "includes": [],
       "kind": "BaseProfile",
+      "includes": [],
       "summary": "Minimum governed orchestration semantics."
     },
     {
       "id": "AOF-Governed",
+      "kind": "BaseProfile",
       "includes": [
         "AOF-Core"
       ],
-      "kind": "BaseProfile",
       "summary": "Core plus explicit governance controls."
     },
     {
       "id": "AOF-Assured",
+      "kind": "BaseProfile",
       "includes": [
         "AOF-Governed"
       ],
-      "kind": "BaseProfile",
       "summary": "Governed plus Evidence, Verification, independence, completion and accountability."
     },
     {
       "id": "AOF-Secure-SDLC",
+      "kind": "DomainProfile",
       "includes": [
         "applicable AOF-Core semantics"
       ],
-      "kind": "DomainProfile",
       "summary": "Secure software development domain profile; composes with governed/assured controls according to claimed scope."
     },
     {
       "id": "AOF-High-Assurance",
+      "kind": "StrengtheningProfile",
       "includes": [
         "applicable base/domain profile"
       ],
-      "kind": "StrengtheningProfile",
       "summary": "Strengthening profile for consequential/high-impact orchestration."
     }
   ],

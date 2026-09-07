@@ -14,6 +14,7 @@ const (
 	ApplicabilityApplicable    = "applicable"
 	ApplicabilityConditional   = "conditional"
 	ApplicabilityNotApplicable = "not_applicable"
+	ApplicabilityNotEvaluated  = "not_evaluated"
 	NormativeMust              = "MUST"
 	NormativeShould            = "SHOULD"
 	NormativeMay               = "MAY"
@@ -24,12 +25,6 @@ const (
 	ImplementationNotAssessed  = "not_assessed"
 	VerificationNotEvaluated   = "not_evaluated"
 )
-
-var CanonicalObjects = []string{
-	"Goal", "Task", "Agent", "ContextDescriptor", "Resource", "Capability", "AuthorityGrant", "Policy",
-	"RiskAssessment", "ActionProposal", "Decision", "ExecutionContract", "Evidence", "Verification", "Approval",
-	"StateTransition", "TraceEvent", "AgentInteractionContract", "EscalationPackage", "Outcome", "ConformanceManifest", "ConformanceReport",
-}
 
 var AgentTypes = []string{"LLM", "Deterministic", "Human", "Hybrid", "ExternalService"}
 
@@ -90,6 +85,9 @@ type Requirement struct {
 	Domain                      string
 	Statement                   string
 	NormativeLevel              string
+	CanonicalSource             string
+	CanonicalSourceLine         int
+	CanonicalStatus             string
 	Applicability               string
 	ApplicabilityReason         string
 	AppliesTo                   string

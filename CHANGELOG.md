@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.3.2 — Exact Canonical Source Alignment
+
+### Added
+
+- Byte-for-byte embedded copies of the active AOF v1.0 LTS release manifest, normative specification, requirement registry, traceability matrix, profile definitions, schema index, schema catalog, and schema checksums.
+- SHA-256 integrity gates for every embedded upstream source artifact.
+- Offline local-checkout importer with a single `-upstream-root` input.
+
+### Changed
+
+- Canonical requirement records now mirror upstream data without enrichment or normalization.
+- All 17 upstream `Unclassified` architecture requirements retain that exact classification.
+- Invariant, traceability, and canonical-object indexes are derived views over exact upstream sources.
+- Unevaluated applicability and absent mappings are explicit as `not_evaluated` and `source_mapping_absent`.
+- Project schema templates are synchronized byte-for-byte with the active LTS-Editorial-2 checkout.
+
+### Removed
+
+- CLI-authored canonical-object registry.
+- Enriched requirement registry and CLI-authored normative reclassification.
+
 ## v0.3.1 — Canonical Semantic Coverage (2026-09-08)
 
 ### Added

@@ -122,21 +122,21 @@ func TestRequirementProjectionRetainsCanonicalNormativeMeaning(t *testing.T) {
 			t.Fatalf("duplicate canonical requirement %s", requirement.ID)
 		}
 		byID[requirement.ID] = requirement
-		if requirement.Applicability != model.ApplicabilityApplicable && requirement.Applicability != model.ApplicabilityConditional && requirement.Applicability != model.ApplicabilityNotApplicable {
+		if requirement.Applicability != model.ApplicabilityApplicable && requirement.Applicability != model.ApplicabilityConditional && requirement.Applicability != model.ApplicabilityNotApplicable && requirement.Applicability != model.ApplicabilityNotEvaluated {
 			t.Fatalf("%s has invalid applicability %q", requirement.ID, requirement.Applicability)
 		}
 	}
 	for id, level := range map[string]string{
 		"AOF-AGT-002":  "MUST NOT",
 		"AOF-AGT-006":  "SHOULD",
-		"AOF-ARCH-001": "MUST",
-		"AOF-ARCH-011": "SHOULD",
+		"AOF-ARCH-001": "Unclassified",
+		"AOF-ARCH-011": "Unclassified",
 	} {
 		if got := byID[id].NormativeLevel; got != level {
 			t.Fatalf("%s normative=%q want=%q", id, got, level)
 		}
 	}
-	if got := byID["AOF-VER-018"].Applicability; got != model.ApplicabilityConditional {
+	if got := byID["AOF-VER-018"].Applicability; got != model.ApplicabilityNotEvaluated {
 		t.Fatalf("unselected canonical requirement silently disappeared or was overclaimed: %q", got)
 	}
 }

@@ -203,8 +203,8 @@ func buildObjects(p model.ProjectDefinition, profile string, secure, high, conse
 	set := func(name, applicability, level, state, reason string, reqs ...string) {
 		objects[name] = model.ObjectSelection{Applicability: applicability, NormativeLevel: level, AdoptionState: state, Reason: reason, RequirementIDs: reqs}
 	}
-	for _, name := range model.CanonicalObjects {
-		set(name, model.ApplicabilityConditional, model.NormativeShould, model.AdoptionPlanned, "conditional on project semantics")
+	for _, object := range canonical.MustLoad().CanonicalObjects {
+		set(object.Name, model.ApplicabilityNotEvaluated, "Unclassified", model.AdoptionDeferred, "canonical schema exists; applicability has not been established by an upstream source mapping")
 	}
 	for _, name := range []string{"Goal", "Task", "Agent", "ContextDescriptor", "Resource", "Capability", "AuthorityGrant", "Policy", "ActionProposal", "Decision", "StateTransition", "TraceEvent", "Outcome"} {
 		set(name, model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "AOF-Core project model")
@@ -254,35 +254,47 @@ func requirementRegistry(controls map[string]model.ControlSelection, secure, hig
 	}
 	out := make([]model.Requirement, 0, len(registry.Requirements))
 	for _, requirement := range registry.Requirements {
-		applicability := model.ApplicabilityConditional
-		reason := "canonical requirement retained; applicability requires profile and project-scope evaluation"
+		applicability := model.ApplicabilityNotEvaluated
+		reason := "canonical requirement retained; upstream applicability mapping is absent and AOF CLI has not evaluated it"
 		if seen[requirement.ID] {
 			applicability = model.ApplicabilityApplicable
-			reason = "selected by an applicable project control or profile rule"
+			reason = "selected by the AOF CLI project adoption process; this is non-canonical projection metadata"
 		}
-		out = append(out, requirementFor(requirement, applicability, reason))
+		out = append(out, requirementFor(registry, requirement, applicability, reason))
 	}
 	return out
 }
 
-func requirementFor(requirement canonical.Requirement, applicability, reason string) model.Requirement {
+func requirementFor(registry canonical.Registry, requirement canonical.Requirement, applicability, reason string) model.Requirement {
 	appliesTo := strings.Join(requirement.AppliesTo, ", ")
 	if appliesTo == "" {
-		appliesTo = "profile and project scope"
+		appliesTo = "source_mapping_absent"
 	}
 	verification := strings.Join(requirement.VerificationMethods, ", ")
+	verificationDisposition := "declared_in_requirement_registry"
 	if verification == "" {
-		verification = requirement.VerificationDisposition
+		verification = "source_mapping_absent"
+		verificationDisposition = "source_mapping_absent"
+	}
+	evidenceDisposition := "declared_in_requirement_registry"
+	if len(requirement.RequiredEvidence) == 0 {
+		evidenceDisposition = "source_mapping_absent"
+	}
+	trace := registry.RequirementTraceability(requirement.ID)
+	invariantDisposition := "declared_in_traceability_matrix"
+	if len(trace.RelatedInvariants) == 0 {
+		invariantDisposition = "source_mapping_absent"
 	}
 	return model.Requirement{
 		ID: requirement.ID, Domain: requirement.Domain, Statement: requirement.Statement,
-		NormativeLevel: requirement.NormativeLevel, Applicability: applicability,
+		NormativeLevel: requirement.NormativeLevel, CanonicalSource: requirement.Source.Specification,
+		CanonicalSourceLine: requirement.Source.Line, CanonicalStatus: requirement.Status, Applicability: applicability,
 		ApplicabilityReason: reason, AppliesTo: appliesTo, Profiles: append([]string(nil), requirement.Profiles...),
 		VerificationMethod: verification, RequiredEvidence: append([]string(nil), requirement.RequiredEvidence...),
-		RelatedInvariants:       append([]string(nil), requirement.RelatedInvariants...),
-		RelatedObjects:          append([]string(nil), requirement.RelatedCanonicalObjects...),
-		VerificationDisposition: requirement.VerificationDisposition, EvidenceDisposition: requirement.EvidenceDisposition,
-		InvariantMappingDisposition: requirement.InvariantMappingDisposition, ObjectMappingDisposition: requirement.ObjectMappingDisposition,
+		RelatedInvariants:       append([]string(nil), trace.RelatedInvariants...),
+		RelatedObjects:          nil,
+		VerificationDisposition: verificationDisposition, EvidenceDisposition: evidenceDisposition,
+		InvariantMappingDisposition: invariantDisposition, ObjectMappingDisposition: "source_mapping_absent",
 	}
 }
 

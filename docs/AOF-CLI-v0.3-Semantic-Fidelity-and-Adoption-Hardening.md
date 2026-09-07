@@ -107,11 +107,11 @@ stable_semantic_ids == 494
 canonical_traceability_edges == 352
 ```
 
-The gate validates exact ID-set hashes in addition to counts. It rejects duplicate or malformed IDs, invalid normative classifications, unknown edge endpoints, broken profiles/canonical objects, and silent mapping gaps.
+As of v0.3.2, the gate validates SHA-256 of each byte-for-byte embedded upstream artifact in addition to counts. It rejects duplicate or malformed IDs, unknown edge endpoints, and incomplete upstream profile/schema indexes. Upstream `Unclassified` values are retained exactly and are not reclassified by the CLI.
 
-Every canonical requirement participates in project projection. Requirements selected by a control/profile rule become `applicable`; all other requirements remain explicitly `conditional` pending profile and project-scope evaluation. They never silently disappear, and initialization does not treat a conditional item as implemented, verified, or conformant.
+Every canonical requirement participates in project projection. Requirements selected by a CLI control/profile process become `applicable` with that decision explicitly labeled non-canonical projection metadata. All other requirements remain `not_evaluated`; the CLI does not guess `conditional`. They never silently disappear, and initialization does not treat applicability as implementation, verification, or conformance.
 
-Canonical upstream intentionally does not assert a direct invariant, verification, Evidence, or canonical-object mapping for every item. The CLI preserves those absences using explicit `CanonicalMappingNotAsserted` dispositions instead of inventing heuristic edges. This satisfies semantic accounting while keeping upstream traceability debt visible.
+Canonical upstream intentionally does not assert a direct invariant, verification, Evidence, or canonical-object mapping for every item. The CLI preserves those absences as `source_mapping_absent` instead of inventing heuristic edges. Canonical source JSON is never enriched; traceability indexes are separate derived views.
 
 Traceability direction:
 

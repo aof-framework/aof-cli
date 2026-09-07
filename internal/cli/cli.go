@@ -17,7 +17,7 @@ import (
 	"github.com/aof-framework/aof-cli/internal/model"
 )
 
-const Version = "0.3.1"
+const Version = "0.3.2"
 
 func Run(args []string, in io.Reader, out, errOut io.Writer) int {
 	if len(args) == 0 {
@@ -54,7 +54,7 @@ func printHelp(w io.Writer) {
 
 func printVersion(w io.Writer) {
 	fmt.Fprintf(w, "AOF CLI v%s\n", Version)
-	fmt.Fprintln(w, "Release: Canonical Semantic Coverage")
+	fmt.Fprintln(w, "Release: Exact Canonical Source Alignment")
 	fmt.Fprintln(w, "AOF Specification v1.0 LTS")
 	fmt.Fprintln(w, "Canonical Upstream: https://github.com/aof-framework/aof")
 }
@@ -293,13 +293,16 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 }
 
 func printSummary(w io.Writer, p model.ProjectDefinition, a model.AdoptionDefinition, files int) {
-	applicable, planned, unsupported, conditional := 0, 0, 0, 0
+	applicable, planned, unsupported, conditional, notEvaluated := 0, 0, 0, 0, 0
 	for _, c := range a.Controls {
 		if c.Applicability == model.ApplicabilityApplicable {
 			applicable++
 		}
 		if c.Applicability == model.ApplicabilityConditional {
 			conditional++
+		}
+		if c.Applicability == model.ApplicabilityNotEvaluated {
+			notEvaluated++
 		}
 		switch c.AdoptionState {
 		case model.AdoptionPlanned:
@@ -319,7 +322,7 @@ func printSummary(w io.Writer, p model.ProjectDefinition, a model.AdoptionDefini
 	fmt.Fprintf(w, "Base: %s\nDomain: %s\nOverlay: %s\nClaimed conformance: none\n\n", a.Profile.TargetBaseProfile, emptyDash(strings.Join(a.Profile.DomainProfiles, ", ")), emptyDash(strings.Join(a.Profile.Overlays, ", ")))
 	fmt.Fprintln(w, "Governance Scope")
 	fmt.Fprintln(w, "----------------")
-	fmt.Fprintf(w, "Agent types: %s\nConsequential execution: %t\nMulti-Agent: %t\nApplicable controls: %d\nConditional controls: %d\nPlanned controls: %d\nUnsupported mandatory/selected capability controls: %d\nRequirements indexed: %d\nGenerated files: %d\n", strings.Join(p.AgentTypes, ", "), p.AI.ConsequentialExecution, p.MultiAgent, applicable, conditional, planned, unsupported, len(a.Requirements), files)
+	fmt.Fprintf(w, "Agent types: %s\nConsequential execution: %t\nMulti-Agent: %t\nApplicable controls: %d\nConditional controls: %d\nNot-evaluated controls: %d\nPlanned controls: %d\nUnsupported mandatory/selected capability controls: %d\nRequirements indexed: %d\nGenerated files: %d\n", strings.Join(p.AgentTypes, ", "), p.AI.ConsequentialExecution, p.MultiAgent, applicable, conditional, notEvaluated, planned, unsupported, len(a.Requirements), files)
 	if len(a.Warnings) > 0 {
 		fmt.Fprintln(w, "\nGovernance warnings\n-------------------")
 		for _, warning := range a.Warnings {

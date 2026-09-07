@@ -2,7 +2,7 @@
 
 AOF CLI is the repository bootstrap utility for adopting the [AI Orchestration Framework (AOF)](https://github.com/aof-framework/aof).
 
-**Current version:** v0.3.1 — Canonical Semantic Coverage
+**Current version:** v0.3.2 — Exact Canonical Source Alignment
 **AOF baseline:** v1.0 LTS
 
 AOF CLI configures project-aware adoption context. It is **not** an AOF runtime, does not prove implementation, and does not create an AOF conformance claim.
@@ -14,6 +14,19 @@ aof init
 aof version
 aof help
 ```
+
+## What changed in v0.3.2
+
+v0.3.2 makes the AOF specification repository the only source of framework data:
+
+- embeds the active release manifest, normative specification, requirement registry, traceability matrix, profile definitions, schema index, schema catalog, and active schema checksums byte-for-byte;
+- validates every embedded source artifact by SHA-256 before use;
+- preserves all upstream values, including the 17 `Unclassified` architecture requirements, without CLI normalization;
+- derives invariant and traceability indexes without modifying canonical source data;
+- derives canonical-object names from the upstream schema index rather than a CLI-owned list;
+- labels applicability and adoption decisions as non-canonical CLI process metadata;
+- represents absent upstream mappings as `source_mapping_absent` and unevaluated requirements as `not_evaluated`;
+- synchronizes generated JSON Schemas exactly with the active AOF v1.0 LTS checkout.
 
 ## What changed in v0.3.1
 
@@ -55,11 +68,17 @@ The CLI embeds and validates the complete AOF v1.0 LTS semantic universe before 
 352 canonical traceability edges
 ```
 
-Build tests fail on a missing, duplicate, unknown, or malformed semantic ID; an invalid normative keyword; a broken traceability edge; incomplete profile/object registries; or a silent mapping disposition. Counts are paired with hashes of the exact ID sets, so replacing one canonical ID with another cannot satisfy the gate.
+Build tests fail when any embedded canonical artifact differs from its pinned upstream SHA-256, or on a missing, duplicate, unknown, or malformed semantic ID, broken traceability edge, or incomplete upstream profile/schema index.
 
-`aof init` remains offline. It emits all 332 requirement IDs with `Applicable` or `Conditional` projection state, while retaining full canonical wording only inside the CLI registry for context efficiency. A missing upstream mapping is recorded explicitly and is never filled using heuristic similarity.
+`aof init` remains offline. It emits all 332 requirement IDs with their exact canonical statements and normative classifications. An unselected requirement is `not_evaluated`, never silently converted to `Conditional`; missing upstream mappings remain `source_mapping_absent` and are never filled using heuristic similarity.
 
-Canonical registry sources live under `internal/canonical/data/`. Maintainers can reproduce the imported data with `tools/canonicalgen` against the pinned upstream commit recorded in `internal/canonical/registry.go`.
+Exact canonical sources live under `internal/canonical/source/`. Maintainers reproduce them without network access using:
+
+```powershell
+go run ./tools/canonicalgen -upstream-root "D:\AI Orchestration Framework\AOF-v1.0-LTS"
+```
+
+The importer only reads the upstream checkout. The local absolute path is not embedded in the binary or generated projects.
 
 ## Build
 

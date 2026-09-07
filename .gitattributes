@@ -1,0 +1,3 @@
+# Canonical AOF artifacts must remain byte-for-byte stable on every platform.
+internal/canonical/source/** -text
+templates/static/schemas/** -text
