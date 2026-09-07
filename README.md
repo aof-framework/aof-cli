@@ -1,5 +1,10 @@
 # AOF CLI
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/aof-framework/aof-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/aof-framework/aof-cli/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aof-framework/aof-cli.svg)](https://pkg.go.dev/github.com/aof-framework/aof-cli)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aof-framework/aof-cli)](https://goreportcard.com/report/github.com/aof-framework/aof-cli)
+
 AOF CLI is the official repository bootstrap utility for adopting the [AI Orchestration Framework (AOF)](https://github.com/aof-framework/aof).
 
 It configures project context and developer-facing adoption artifacts. It is **not** an AOF runtime and is not required by applications after initialization.
@@ -18,7 +23,11 @@ go install github.com/aof-framework/aof-cli/cmd/aof@latest
 
 > Ensure `$GOPATH/bin` (or `%USERPROFILE%\go\bin` on Windows) is in your system's `PATH`.
 
-### Option 2: Build from Source
+### Option 2: Pre-built Binaries (GitHub Releases)
+
+Download pre-compiled binaries for Linux, macOS, and Windows directly from [GitHub Releases](https://github.com/aof-framework/aof-cli/releases).
+
+### Option 3: Build from Source
 
 ```bash
 # Clone the repository
@@ -33,7 +42,7 @@ Move the compiled `aof` binary to a directory in your `PATH`:
 - **Linux/macOS:** `sudo mv aof /usr/local/bin/`
 - **Windows:** Move `aof.exe` to a directory included in your system `PATH`.
 
-### Option 3: Run directly without installation
+### Option 4: Run directly without installation
 
 ```bash
 cd /path/to/your-project
@@ -104,6 +113,22 @@ Running `aof init` creates:
 - `.agents/`: Pinned agent skills (`.agents/skills/`) and agent role definitions (`.agents/agents/`).
 - `AGENTS.md` & `AOF.md`: Repository instructions and governance posture for humans and AI coding assistants.
 - `docs/aof/`: Embedded static AOF semantic and execution boundary documentation.
+
+---
+
+## Contributing & Community
+
+We welcome community contributions! Please read our guidelines before getting started:
+
+- [Contributing Guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+
+---
+
+## License
+
+This project is licensed under the **Apache License, Version 2.0**. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.
 
 ---
 
