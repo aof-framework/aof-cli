@@ -1,0 +1,32 @@
+# AOF Adoption — {{.Project.Name}}
+
+This repository adopts **AI Orchestration Framework (AOF) v1.0 LTS**.
+
+- Canonical repository: https://github.com/aof-framework/aof
+- Canonical specification: https://github.com/aof-framework/aof/blob/main/specification/AOF-v1.0-Framework-Specification.md
+- Adoption profile: **{{.Adoption.Profile}}**
+- Adoption mode: **{{.Adoption.Mode}}**
+
+## Project Context
+
+- Language: {{.Project.Language}}
+- Type: {{.Project.Type}}
+- Domain: {{.Project.Domain}}
+
+## AI Usage
+
+- Enabled: {{.Project.AI.Enabled}}
+- Analysis: {{.Project.AI.Analysis}}
+- Classification: {{.Project.AI.Classification}}
+- Recommendation: {{.Project.AI.Recommendation}}
+- Consequential execution: {{.Project.AI.ConsequentialExecution}}
+
+## Governance Posture
+
+AI Agents may analyze, classify, recommend, and produce proposals when those capabilities are applicable to the project. They MUST NOT infer Authority from Capability, self-grant Authority, or treat their own Proposal as an AuthorizedDecision.
+
+{{if .Project.AI.ConsequentialExecution}}Consequential AI execution is declared in scope and must be bounded by applicable Authority, Policy, State, Risk, and Verification controls before effects occur.{{else}}Consequential AI execution is not declared in scope. Generated project guidance therefore treats AI behavior as advisory by default.{{end}}
+
+## Control Status
+
+See `.aof/config.yaml` for the explicit project control matrix. `Deferred` and `Unsupported` are visible gaps and MUST NOT be interpreted as satisfied. `NotApplicable` MUST reflect true non-applicability.

@@ -1,0 +1,27 @@
+# Repository Instructions
+
+This repository contains **{{.Project.Name}}**.
+
+## Project
+
+- Language: {{.Project.Language}}
+- Type: {{.Project.Type}}
+- Domain: {{.Project.Domain}}
+
+## AOF Adoption
+
+This project adopts **AOF v1.0 LTS** using **{{.Adoption.Profile}}**.
+
+Canonical AOF upstream: https://github.com/aof-framework/aof
+
+Before modifying AI automation, Authority, Approval, Policy, Risk, consequential execution, Evidence, Verification, or Trace, read `AOF.md` and the relevant skills under `.agents/skills/`.
+
+Preserve these boundaries:
+
+- Capability != Authority
+- Proposal != AuthorizedDecision
+- AgentOutput = UntrustedProposal
+- Pending != Pass
+- Claim != Evidence != Verification
+
+{{if .Project.AI.ConsequentialExecution}}Consequential AI execution is in scope. Do not connect AI output directly to an external effect; preserve governance evaluation and execution boundaries.{{else}}AI consequential execution is not declared in scope. AI agents are advisory unless project governance is explicitly changed through a reviewed adoption update.{{end}}
