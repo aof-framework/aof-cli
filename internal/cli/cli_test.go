@@ -12,7 +12,7 @@ func TestVersion(t *testing.T) {
 	if code := Run([]string{"version"}, strings.NewReader(""), &out, &errOut); code != 0 {
 		t.Fatalf("code %d err %s", code, errOut.String())
 	}
-	if !strings.Contains(out.String(), "AOF CLI v0.1.0") || !strings.Contains(out.String(), "AOF Specification v1.0 LTS") {
+	if !strings.Contains(out.String(), "AOF CLI v0.2.0") || !strings.Contains(out.String(), "AOF Specification v1.0 LTS") {
 		t.Fatalf("unexpected output: %s", out.String())
 	}
 }
@@ -39,7 +39,7 @@ func TestInitNonInteractive(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("code=%d stderr=%s", code, errOut.String())
 	}
-	if !strings.Contains(out.String(), "AOF initialization complete") {
+	if !strings.Contains(out.String(), "AOF initialization complete") || !strings.Contains(out.String(), "Applicable Agent Skills") {
 		t.Fatalf("unexpected output: %s", out.String())
 	}
 	if _, err := os.Stat("AOF.md"); err != nil {

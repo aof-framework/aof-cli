@@ -1,10 +1,16 @@
 ---
 name: project-domain
-description: Apply the declared project domain context without inventing business semantics that are not documented in the repository.
+description: Apply project-specific domain context without inventing domain rules that were not declared by the repository.
 ---
 
 # Project Domain
 
-Declared domain: **{{.Project.Domain}}**
+- Domain: {{.Project.Domain}}
+- Features: {{if .Project.Features}}{{join .Project.Features ", "}}{{else}}not declared{{end}}
+- Data sensitivity: {{.Project.DataSensitivity}}
 
-Use repository documentation and code as the authoritative source for project-specific business behavior. AOF provides governance semantics; it does not define this project's domain semantics.
+## Procedure
+1. Use repository code/docs as authoritative domain context.
+2. Do not invent domain-specific Authority, Policy, RiskAcceptance, or approval rules.
+3. Map consequential domain operations into `aof/execution/consequential-actions.yaml` when introduced.
+4. Update project AOF context when new features materially change governance applicability.

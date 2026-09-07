@@ -9,24 +9,65 @@ This repository adopts **AI Orchestration Framework (AOF) v1.0 LTS**.
 
 ## Project Context
 
-- Language: {{.Project.Language}}
-- Type: {{.Project.Type}}
-- Domain: {{.Project.Domain}}
+| Property | Declared value |
+|---|---|
+| Language | {{.Project.Language}} |
+| Type | {{.Project.Type}} |
+| Domain | {{.Project.Domain}} |
+| Architecture | {{.Project.Architecture}} |
+| Deployment | {{.Project.Deployment}} |
+| Criticality | {{.Project.Criticality}} |
+| Data sensitivity | {{.Project.DataSensitivity}} |
 
-## AI Usage
+## AI Scope
 
-- Enabled: {{.Project.AI.Enabled}}
+- AI enabled: {{.Project.AI.Enabled}}
+- Logical agents: {{.Project.AgentCount}}
+- Multi-agent: {{.Project.MultiAgent}}
 - Analysis: {{.Project.AI.Analysis}}
 - Classification: {{.Project.AI.Classification}}
 - Recommendation: {{.Project.AI.Recommendation}}
+- Tool use: {{.Project.AI.ToolUse}}
+- Persistent state mutation: {{.Project.AI.StateMutation}}
+- External action: {{.Project.AI.ExternalAction}}
+- Infrastructure action: {{.Project.AI.InfrastructureAction}}
 - Consequential execution: {{.Project.AI.ConsequentialExecution}}
 
-## Governance Posture
+## Governance Root and Authority
 
-AI Agents may analyze, classify, recommend, and produce proposals when those capabilities are applicable to the project. They MUST NOT infer Authority from Capability, self-grant Authority, or treat their own Proposal as an AuthorizedDecision.
+The Human/Organization remains the GovernanceRoot. Agent autonomy is bounded by the Human/Organizational GovernanceEnvelope.
 
-{{if .Project.AI.ConsequentialExecution}}Consequential AI execution is declared in scope and must be bounded by applicable Authority, Policy, State, Risk, and Verification controls before effects occur.{{else}}Consequential AI execution is not declared in scope. Generated project guidance therefore treats AI behavior as advisory by default.{{end}}
+- Declared Authority holder: **{{.Project.AuthorityHolder}}**
+- Human approval declared: **{{.Project.HumanApproval}}**
+- Policy enforcement mechanism: **{{.Project.PolicyMechanism}}**
 
-## Control Status
+`Capability != Authority` and `Approval != AuthorityGrant` remain mandatory semantic boundaries.
 
-See `.aof/config.yaml` for the explicit project control matrix. `Deferred` and `Unsupported` are visible gaps and MUST NOT be interpreted as satisfied. `NotApplicable` MUST reflect true non-applicability.
+## Consequential Effects
+
+{{if .Project.AI.ConsequentialExecution}}Consequential AI execution is declared. The project MUST preserve the control predicate `ExecuteAllowed = C AND H AND P AND S AND R AND V`. Mandatory Fail blocks execution and mandatory Pending remains Pending.{{else}}No consequential AI execution is declared. Execution-specific controls may therefore be NotApplicable or Deferred according to `.aof/config.yaml`.{{end}}
+
+Declared effect types: {{if .Project.EffectTypes}}{{join .Project.EffectTypes ", "}}{{else}}none{{end}}.
+
+## Risk Scope
+
+Declared risk categories: {{if .Project.RiskCategories}}{{join .Project.RiskCategories ", "}}{{else}}none{{end}}.
+
+`RiskAssessment != RiskAcceptance`.
+
+## Canonical Object Applicability
+
+The 22 AOF canonical machine-readable object families are mapped in `.aof/applicability.yaml`. This mapping expresses project applicability; it does **not** claim that every required object has already been implemented in application code.
+
+## Control Status and Gaps
+
+- `.aof/config.yaml` — control matrix
+- `.aof/adoption.yaml` — scoped adoption principles and skills
+- `aof/conformance/gaps.md` — Deferred/Unsupported controls and warnings
+- `aof/conformance/scope.yaml` — explicit scoped-conformance posture
+
+`Deferred != Satisfied`, `Unsupported != Satisfied`, and `NotApplicable` MUST reflect true non-applicability rather than convenience.
+
+## Operational Guidance
+
+AI coding agents SHOULD use `AGENTS.md` as a router and load only relevant AOF skills. Rich project-specific context is kept under `aof/`; canonical static semantics remain grounded in AOF v1.0 LTS.

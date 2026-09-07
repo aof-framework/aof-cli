@@ -1,13 +1,21 @@
 ---
 name: project-architecture
-description: Apply the repository-specific architecture and technology context while implementing changes.
+description: Apply this repository's declared architecture, deployment, criticality, and AOF boundaries when designing or changing system structure.
 ---
 
 # Project Architecture
 
-Project: {{.Project.Name}}
-Language: {{.Project.Language}}
-Type: {{.Project.Type}}
-Domain: {{.Project.Domain}}
+## Context
+- Project: {{.Project.Name}}
+- Type: {{.Project.Type}}
+- Language: {{.Project.Language}}
+- Architecture: {{.Project.Architecture}}
+- Deployment: {{.Project.Deployment}}
+- Criticality: {{.Project.Criticality}}
 
-Respect existing repository architecture when present. Do not invent transport, deployment, database, or framework requirements that were not discovered or declared.
+## Procedure
+1. Preserve existing project architecture unless a reviewed change requires otherwise.
+2. Keep Reasoning, Control, Effect, and Assurance responsibilities separable even if deployed in one service/process.
+3. Consequential effects MUST cross an explicit Effect Boundary after governance evaluation.
+4. Keep application runtime independent from the AOF CLI.
+5. Consult `aof/execution/`, `aof/authority/`, and `aof/risk/` before introducing AI-controlled side effects.

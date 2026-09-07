@@ -13,19 +13,19 @@ import (
 
 func testModel() model.BootstrapModel {
 	p := model.ProjectDefinition{Name: "itsm-backend", Language: "Go", Type: "backend", Domain: "itsm", AI: model.AIUsage{Enabled: true, Analysis: true, Recommendation: true}}
-	return model.BootstrapModel{Project: p, Adoption: adoption.Build(model.ProfileCore, p.AI, map[string]bool{"authority": true, "policy": true, "risk": true, "trace": true})}
+	return model.BootstrapModel{Project: p, Adoption: adoption.Build(model.ProfileCore, p, map[string]bool{"authority": true, "policy": true, "risk": true, "trace": true})}
 }
 
 func TestBuildAndApply(t *testing.T) {
 	d := t.TempDir()
-	p, err := BuildPlan(testModel(), "0.1.0")
+	p, err := BuildPlan(testModel(), "0.2.0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := Apply(d, p); err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{"AGENTS.md", "AOF.md", ".aof/project.yaml", ".aof/config.yaml", ".aof/manifest.json", ".agents/skills/aof-core/SKILL.md"} {
+	for _, path := range []string{"AGENTS.md", "AOF.md", ".aof/project.yaml", ".aof/config.yaml", ".aof/adoption.yaml", ".aof/applicability.yaml", ".aof/manifest.json", ".agents/skills/aof-core/SKILL.md", "aof/authority/authority-model.yaml", "aof/risk/risk-model.yaml", "aof/conformance/gaps.md"} {
 		if _, err := os.Stat(filepath.Join(d, path)); err != nil {
 			t.Fatalf("missing %s: %v", path, err)
 		}
@@ -48,7 +48,7 @@ func TestConflictAbortsBeforeWrites(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, _ := BuildPlan(testModel(), "0.1.0")
+	p, _ := BuildPlan(testModel(), "0.2.0")
 	err := Apply(d, p)
 	var ce *ConflictError
 	if !errors.As(err, &ce) {
@@ -61,7 +61,7 @@ func TestConflictAbortsBeforeWrites(t *testing.T) {
 
 func TestSecondInit(t *testing.T) {
 	d := t.TempDir()
-	p, _ := BuildPlan(testModel(), "0.1.0")
+	p, _ := BuildPlan(testModel(), "0.2.0")
 	if err := Apply(d, p); err != nil {
 		t.Fatal(err)
 	}

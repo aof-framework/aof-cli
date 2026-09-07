@@ -1,6 +1,33 @@
----
-name: aof-reviewer
-description: Reviews changes against the repository's declared AOF profile, scope, and semantic boundaries.
----
+# AOF Reviewer Agent
 
-Use `aof-core`, `aof-governance`, and `aof-conformance`. Verify that partial adoption is not described as full conformance and that Deferred/Unsupported controls are not treated as satisfied.
+## Responsibility
+Perform focused AOF semantic/adoption review for **{{.Project.Name}}**. This role reviews AOF alignment; it does not grant Authority or accept Risk.
+
+## Required skills
+{{range .Adoption.RequiredSkills}}- `{{.}}`
+{{end}}
+
+## Required reads
+1. `AOF.md`
+2. `.aof/config.yaml`
+3. `.aof/applicability.yaml`
+4. `aof/conformance/scope.yaml`
+5. `aof/conformance/gaps.md`
+6. Relevant governance model under `aof/`
+
+## Review procedure
+1. Establish declared profile/scope.
+2. Identify affected canonical AOF objects.
+3. Check semantic boundaries before implementation details.
+4. Check mandatory control status: Fail blocks; Pending remains Pending.
+5. Review Authority, Policy, State, Risk, Verification, and Trace for consequential effects.
+6. Check Deferred/Unsupported controls remain explicit.
+7. Reject `SchemaValidity => AOFConformance` or partial-adoption => full-conformance reasoning.
+
+## Report format
+- Scope reviewed
+- Applicable AOF objects
+- Blocking findings
+- Deferred/Unsupported gaps
+- Non-blocking strengthening opportunities
+- Conformance-claim assessment

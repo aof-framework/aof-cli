@@ -1,27 +1,58 @@
 # Repository Instructions
 
-This repository contains **{{.Project.Name}}**.
+This repository contains **{{.Project.Name}}** and adopts **AOF v1.0 LTS** using **{{.Adoption.Profile}}**.
 
 ## Project
 
 - Language: {{.Project.Language}}
 - Type: {{.Project.Type}}
 - Domain: {{.Project.Domain}}
+- Architecture: {{.Project.Architecture}}
+- Deployment: {{.Project.Deployment}}
+- Criticality: {{.Project.Criticality}}
+- Data sensitivity: {{.Project.DataSensitivity}}
 
-## AOF Adoption
+## AOF Routing
 
-This project adopts **AOF v1.0 LTS** using **{{.Adoption.Profile}}**.
+Before changing AI automation, Agent capabilities, Authority, Approval, Policy, Risk, consequential execution, State, Evidence, Verification, Trace, or Conformance:
 
-Canonical AOF upstream: https://github.com/aof-framework/aof
+1. Read `AOF.md`.
+2. Read `.aof/applicability.yaml` and `.aof/config.yaml`.
+3. Load the relevant skill under `.agents/skills/`.
+4. Read the relevant project model under `aof/`.
+5. Surface a gap instead of inventing missing Authority, Policy, Risk, Evidence, or Verification.
 
-Before modifying AI automation, Authority, Approval, Policy, Risk, consequential execution, Evidence, Verification, or Trace, read `AOF.md` and the relevant skills under `.agents/skills/`.
+## Canonical semantic boundaries
 
-Preserve these boundaries:
+- `Reasoning != Decision != Authority != Action`
+- `Capability != Authority`
+- `Proposal != AuthorizedDecision`
+- `AgentOutput = UntrustedProposal`
+- `PolicyPrompt != PolicyEnforcement`
+- `Approval != AuthorityGrant`
+- `RiskAssessment != RiskAcceptance`
+- `Pending != Pass`
+- `Claim != Evidence != Verification`
+- `SchemaValidity != SemanticValidity != AOFConformance`
 
-- Capability != Authority
-- Proposal != AuthorizedDecision
-- AgentOutput = UntrustedProposal
-- Pending != Pass
-- Claim != Evidence != Verification
+## Project execution posture
 
-{{if .Project.AI.ConsequentialExecution}}Consequential AI execution is in scope. Do not connect AI output directly to an external effect; preserve governance evaluation and execution boundaries.{{else}}AI consequential execution is not declared in scope. AI agents are advisory unless project governance is explicitly changed through a reviewed adoption update.{{end}}
+{{if .Project.AI.ConsequentialExecution}}Consequential AI execution **is in scope**. AI output MUST NOT be wired directly to an Effect. Preserve Proposal -> governance evaluation -> AuthorizedDecision -> ExecutionContract -> Effect Boundary -> Evidence -> Verification -> Trace.{{else}}Consequential AI execution is **not declared in scope**. AI output is advisory/propositional unless the reviewed AOF adoption model is updated.{{end}}
+
+## Applicable AOF skills
+
+{{range .Adoption.RequiredSkills}}- `.agents/skills/{{.}}/SKILL.md`
+{{end}}
+
+## Generated governance models
+
+- `aof/governance/`
+- `aof/agents/`
+- `aof/authority/`
+- `aof/policies/`
+- `aof/risk/`
+- `aof/execution/`
+- `aof/assurance/`
+- `aof/conformance/`
+
+Do not claim full AOF conformance from partial adoption. `Deferred` and `Unsupported` remain visible gaps.

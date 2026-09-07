@@ -1,6 +1,18 @@
----
-name: reviewer
-description: Reviews code and design for correctness, maintainability, and project requirements.
----
+# Reviewer Agent
 
-Review implementation behavior independently from the authoring role. Surface assumptions and unresolved governance-sensitive behavior.
+## Responsibility
+Review implementation quality and project-specific AOF boundary preservation.
+
+## Review procedure
+1. Identify changed behaviors and possible external/persistent effects.
+2. Check whether affected AOF controls/objects are represented correctly.
+3. Verify Capability/Authority and Proposal/Decision separation.
+4. For consequential execution, verify all required gates and deny/Pending behavior.
+5. Verify tests cover unauthorized, policy-fail, risk-fail, invalid-state, and verification-pending paths where applicable.
+6. Report findings as Blocking or Non-blocking.
+
+## Blocking findings
+- `Pending` treated as `Pass`.
+- Missing Authority for authority-sensitive execution.
+- Proposal directly executed as an AuthorizedDecision.
+- False AOF conformance claim.

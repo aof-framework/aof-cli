@@ -16,21 +16,42 @@ const (
 	StatusUnsupported   = "unsupported"
 )
 
+var CanonicalObjects = []string{
+	"Goal", "Task", "Agent", "ContextDescriptor", "Resource", "Capability", "AuthorityGrant", "Policy",
+	"RiskAssessment", "ActionProposal", "Decision", "ExecutionContract", "Evidence", "Verification", "Approval",
+	"StateTransition", "TraceEvent", "AgentInteractionContract", "EscalationPackage", "Outcome", "ConformanceManifest", "ConformanceReport",
+}
+
 type AIUsage struct {
 	Enabled                bool
 	Analysis               bool
 	Classification         bool
 	Recommendation         bool
+	ToolUse                bool
+	StateMutation          bool
+	ExternalAction         bool
+	InfrastructureAction   bool
 	ConsequentialExecution bool
 }
 
 type ProjectDefinition struct {
-	Name     string
-	Language string
-	Type     string
-	Domain   string
-	Features []string
-	AI       AIUsage
+	Name            string
+	Language        string
+	Type            string
+	Domain          string
+	Architecture    string
+	Deployment      string
+	Criticality     string
+	DataSensitivity string
+	Features        []string
+	AI              AIUsage
+	AgentCount      string
+	MultiAgent      bool
+	HumanApproval   bool
+	AuthorityHolder string
+	PolicyMechanism string
+	RiskCategories  []string
+	EffectTypes     []string
 }
 
 type ControlSelection struct {
@@ -40,10 +61,18 @@ type ControlSelection struct {
 	Reason        string
 }
 
+type ObjectSelection struct {
+	Status string
+	Reason string
+}
+
 type AdoptionDefinition struct {
-	Profile  string
-	Mode     string
-	Controls map[string]ControlSelection
+	Profile          string
+	Mode             string
+	Controls         map[string]ControlSelection
+	CanonicalObjects map[string]ObjectSelection
+	RequiredSkills   []string
+	Warnings         []string
 }
 
 type BootstrapModel struct {
