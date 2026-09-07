@@ -1,24 +1,23 @@
 ---
 name: aof-conformance
-description: Review declared AOF adoption and conformance without converting schema validity, maturity, or partial implementation into AOF conformance.
+description: Evaluate AOF adoption and conformance without converting target profiles, schema validity, maturity, planned controls, or partial implementation into AOF conformance.
 ---
-
 # AOF Conformance
-
-## Trigger
-Use for conformance claims, release review, adoption status, schema validation, or changes to `.aof/` and `aof/conformance/`.
 
 ## Required reads
 - `.aof/applicability.yaml`
+- `.aof/requirements.yaml`
 - `.aof/config.yaml`
 - `aof/conformance/scope.yaml`
 - `aof/conformance/gaps.md`
+- canonical schemas under `aof/schemas/`
 
 ## Procedure
-1. Establish declared scope and profile.
-2. Review every applicable/required control status.
-3. Treat Deferred and Unsupported as unresolved gaps.
-4. Verify NotApplicable has a defensible scope reason.
-5. Keep `SchemaValidity != SemanticValidity != AOFConformance`.
-6. Keep `Conformance != Maturity`.
-7. Reject full-conformance language unless supported by the applicable conformance process/evidence.
+1. Distinguish target profile from claimed profile.
+2. Establish explicit scope, exclusions, environments, Agent types, tool classes, and governance boundaries.
+3. Evaluate each applicable requirement independently.
+4. Treat `not_assessed`, `not_evaluated`, unsupported, and unresolved mandatory requirements as non-satisfaction.
+5. Validate any NotApplicable claim structurally and semantically.
+6. Preserve profile dependencies/composition without weakening mandatory requirements.
+7. Keep `SchemaValidity != SemanticValidity != AOFConformance` and `Conformance != Maturity`.
+8. Do not treat `.aof/bootstrap-manifest.json` as canonical `ConformanceManifest`.

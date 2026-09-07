@@ -2,160 +2,289 @@ package adoption
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/aof-framework/aof-cli/internal/model"
 )
 
+type Options struct {
+	DomainProfiles []string
+	HighAssurance  bool
+}
+
 func Build(profile string, p model.ProjectDefinition, capabilities map[string]bool) model.AdoptionDefinition {
+	return BuildWithOptions(profile, p, capabilities, Options{})
+}
+
+func BuildWithOptions(profile string, p model.ProjectDefinition, capabilities map[string]bool, opts Options) model.AdoptionDefinition {
 	controls := map[string]model.ControlSelection{}
-	add := func(name, applicability, status, reason string) {
-		capability := "supported"
-		if supported, ok := capabilities[name]; ok && !supported {
-			capability = "unsupported"
-			if status == model.StatusEnabled || status == model.StatusRequired {
-				status = model.StatusDeferred
-				reason = "organizational capability not currently available"
+	add := func(name, applicability, level, reason string, reqs ...string) {
+		capability := "not_declared"
+		state := model.AdoptionPlanned
+		if applicability == model.ApplicabilityNotApplicable {
+			state = model.AdoptionNotApplicable
+			capability = "not_applicable"
+		} else if supported, ok := capabilities[name]; ok {
+			if supported {
+				capability = "supported"
+			} else {
+				capability = "unsupported"
+				state = model.AdoptionUnsupported
 			}
 		}
-		controls[name] = model.ControlSelection{Applicability: applicability, Capability: capability, Status: status, Reason: reason}
+		controls[name] = model.ControlSelection{
+			Applicability: applicability, NormativeLevel: level, Capability: capability,
+			AdoptionState: state, ImplementationState: model.ImplementationNotAssessed,
+			VerificationState: model.VerificationNotEvaluated, Reason: reason, RequirementIDs: reqs,
+		}
 	}
 
-	add("governance_root", "required", model.StatusEnabled, "AOF governance requires a Human/Organization governance root")
-	add("capability_boundaries", "required", model.StatusEnabled, "Capability must be explicit and separate from Authority")
-	add("authority", "required", model.StatusEnabled, "Authority boundaries are foundational")
-	add("policy", "required", model.StatusEnabled, "Policy applicability must be explicit")
-	add("risk", "required", model.StatusEnabled, "Risk must be assessed within project scope")
-	add("trace", "required", model.StatusEnabled, "governance-relevant decisions require traceability")
+	// AOF-Core minimum identity and architecture semantics (§21.2 / §8.36).
+	add("governance_root", model.ApplicabilityApplicable, model.NormativeMust, "Human/Organization remains GovernanceRoot", "AOF-ARCH-002")
+	add("identifiable_agent", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Core requires an identifiable Agent", "AOF-ARCH-001")
+	add("task_model", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Core requires Task semantics")
+	add("action_separation", model.ApplicabilityApplicable, model.NormativeMust, "Proposal, Decision, and consequential Action remain distinguishable", "AOF-ARCH-001")
+	add("capability_boundaries", model.ApplicabilityApplicable, model.NormativeMust, "Capability MUST remain distinct from Authority", "AOF-ARCH-003", "AOF-AUTH-007")
+	add("authority", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Core requires explicit Authority semantics", "AOF-AUTH-001", "AOF-AUTH-002")
+	add("policy", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Core requires Policy semantics", "AOF-POL-001", "AOF-POL-002")
+	add("state", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Core requires authoritative State semantics", "AOF-ARCH-007")
+	add("trace", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Core requires reconstruction-capable Trace", "AOF-ARCH-006", "AOF-TRC-001")
+	add("controlled_transition", model.ApplicabilityApplicable, model.NormativeMust, "Consequential state mutation MUST use controlled transition", "AOF-ARCH-005")
+	add("no_implicit_allow", model.ApplicabilityApplicable, model.NormativeMust, "Mandatory Pending/unknown MUST NOT become implicit allow", "AOF-ARCH-004", "AOF-POL-002")
 
-	if p.AI.Enabled {
-		add("agent_governance", "required", model.StatusEnabled, "AI agents are declared in project scope")
+	consequential := p.AI.ConsequentialExecution || p.AI.StateMutation || p.AI.ExternalAction || p.AI.InfrastructureAction || len(p.EffectTypes) > 0
+	if consequential {
+		add("action_proposal", model.ApplicabilityApplicable, model.NormativeMust, "consequential execution requires Proposal/Decision separation", "AOF-ARCH-001")
+		add("authorized_decision", model.ApplicabilityApplicable, model.NormativeMust, "consequential execution requires governed Decision", "AOF-ARCH-001")
+		add("authority_grant", model.ApplicabilityApplicable, model.NormativeMust, "authority-sensitive execution requires applicable grant", "AOF-AUTH-001", "AOF-AUTH-004")
+		add("risk_assessment", model.ApplicabilityApplicable, model.NormativeMust, "control predicate requires Risk evaluation for consequential execution", "AOF-RISK-001", "AOF-RISK-006")
+		add("execution_contract", model.ApplicabilityApplicable, model.NormativeMust, "consequential effects require explicit execution boundary contract", "AOF-ARCH-002", "AOF-ARCH-009")
+		add("effect_boundary", model.ApplicabilityApplicable, model.NormativeMust, "consequential effects MUST be mediated and revalidated", "AOF-ARCH-002", "AOF-ARCH-009")
+		add("state_validation", model.ApplicabilityApplicable, model.NormativeMust, "current state MUST be validated before consequential transition", "AOF-ARCH-005")
+		add("evidence", model.ApplicabilityApplicable, model.NormativeMust, "effect/result Evidence is required for applicable assurance", "AOF-ARCH-010")
+		add("verification", model.ApplicabilityApplicable, model.NormativeMust, "mandatory Verification gates consequential completion", "AOF-VER-001", "AOF-VER-012")
 	} else {
-		add("agent_governance", "not_applicable", model.StatusNotApplicable, "AI agents are not declared")
+		add("action_proposal", model.ApplicabilityConditional, model.NormativeShould, "advisory outputs SHOULD remain explicit proposals")
+		add("authorized_decision", model.ApplicabilityConditional, model.NormativeShould, "Decision remains distinct from Proposal")
+		add("authority_grant", model.ApplicabilityConditional, model.NormativeMust, "required whenever an authority-sensitive action enters scope", "AOF-AUTH-001")
+		add("risk_assessment", model.ApplicabilityConditional, model.NormativeShould, "required when risk-bearing consequential behavior enters scope", "AOF-RISK-001")
+		add("execution_contract", model.ApplicabilityNotApplicable, model.NormativeMay, "no consequential execution declared")
+		add("effect_boundary", model.ApplicabilityConditional, model.NormativeMust, "required when project crosses a consequential Effect Boundary", "AOF-ARCH-009")
+		add("state_validation", model.ApplicabilityConditional, model.NormativeMust, "required for consequential state mutation", "AOF-ARCH-005")
+		add("evidence", model.ApplicabilityConditional, model.NormativeShould, "strengthens assurance when outcomes require objective proof")
+		add("verification", model.ApplicabilityConditional, model.NormativeShould, "strengthens assurance when acceptance must be evaluated")
 	}
 
 	if p.MultiAgent {
-		add("agent_interaction_contract", "required", model.StatusEnabled, "multi-agent interaction declared")
+		add("agent_interaction_contract", model.ApplicabilityApplicable, model.NormativeMust, "multi-Agent interaction/delegation declared", "AOF-ARCH-012")
 	} else {
-		add("agent_interaction_contract", "not_applicable", model.StatusNotApplicable, "single-agent or unspecified agent architecture")
+		add("agent_interaction_contract", model.ApplicabilityConditional, model.NormativeShould, "becomes applicable if multiple Agents interact or delegate")
 	}
 
-	consequential := p.AI.ConsequentialExecution || p.AI.StateMutation || p.AI.ExternalAction || p.AI.InfrastructureAction
-	if consequential {
-		add("action_proposal", "required", model.StatusEnabled, "consequential AI behavior requires Proposal/Decision separation")
-		add("authorized_decision", "required", model.StatusEnabled, "consequential AI behavior declared")
-		add("execution_contract", "required", model.StatusEnabled, "consequential AI execution declared")
-		add("state_validation", "required", model.StatusEnabled, "consequential AI execution declared")
-		add("effect_boundary", "required", model.StatusEnabled, "external or persistent effects are in scope")
-		add("verification", "required", model.StatusEnabled, "consequential AI execution declared")
-		add("evidence", "required", model.StatusEnabled, "verification requires evidence")
-		if !p.HumanApproval {
-			add("approval", "applicable", model.StatusDeferred, "no human approval mechanism declared; Approval remains distinct from Authority")
-		} else {
-			add("approval", "applicable", model.StatusEnabled, "human approval declared")
-		}
+	if p.HumanApproval || profile == model.ProfileGoverned || profile == model.ProfileAssured {
+		add("approval", model.ApplicabilityApplicable, model.NormativeMust, "approval/escalation applies to selected profile or declared human gate", "AOF-AUTH-006")
 	} else {
-		add("action_proposal", "applicable", model.StatusEnabled, "AI output is treated as UntrustedProposal")
-		add("authorized_decision", "applicable", model.StatusEnabled, "Decision remains separate from Proposal")
-		add("execution_contract", "not_applicable", model.StatusNotApplicable, "no consequential AI execution declared")
-		add("state_validation", "not_applicable", model.StatusNotApplicable, "no consequential AI execution declared")
-		add("effect_boundary", "not_applicable", model.StatusNotApplicable, "no consequential AI execution declared")
-		add("verification", "applicable", model.StatusDeferred, "may be strengthened as assurance maturity increases")
-		add("evidence", "applicable", model.StatusDeferred, "may be strengthened as assurance maturity increases")
-		add("approval", "optional", model.StatusNotApplicable, "no consequential action requiring approval declared")
+		add("approval", model.ApplicabilityConditional, model.NormativeShould, "applicable when a Human approval gate is introduced")
 	}
 
 	if profile == model.ProfileGoverned || profile == model.ProfileAssured {
-		add("escalation", "required", model.StatusEnabled, "selected adoption profile")
-		add("conformance_manifest", "required", model.StatusEnabled, "selected adoption profile")
+		add("authority_lifecycle", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Governed requires explicit Authority lifecycle", "AOF-AUTH-004", "AOF-AUTH-008", "AOF-AUTH-016")
+		add("policy_conflict_resolution", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Governed requires deterministic Policy conflict resolution", "AOF-POL-004", "AOF-POL-005")
+		add("dynamic_risk", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Governed requires dynamic Risk evaluation", "AOF-ARCH-011", "AOF-RISK-003", "AOF-RISK-009")
+		add("bounded_delegation", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Governed requires bounded delegation", "AOF-AUTH-009", "AOF-AUTH-011", "AOF-ARCH-012")
+		add("escalation", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Governed requires approval/escalation")
+		add("failure_budget", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Governed requires failure budgets")
+		add("conformance_manifest", model.ApplicabilityApplicable, model.NormativeShould, "profile/scope SHOULD be captured in a canonical ConformanceManifest", "AOF-PRF-003")
 	} else {
-		add("escalation", "applicable", model.StatusDeferred, "progressive strengthening for AOF-Core")
-		add("conformance_manifest", "applicable", model.StatusDeferred, "progressive strengthening for AOF-Core")
+		for _, n := range []string{"authority_lifecycle", "policy_conflict_resolution", "dynamic_risk", "bounded_delegation", "escalation", "failure_budget", "conformance_manifest"} {
+			add(n, model.ApplicabilityConditional, model.NormativeShould, "progressive strengthening beyond AOF-Core")
+		}
 	}
 
 	if profile == model.ProfileAssured {
-		add("independent_verification", "required", model.StatusEnabled, "AOF-Assured strengthening")
-		add("formal_conformance_evidence", "required", model.StatusEnabled, "AOF-Assured strengthening")
+		add("evidence", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Assured requires Evidence", "AOF-ARCH-017")
+		add("evidence_provenance", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Assured requires Evidence provenance", "AOF-ARCH-017")
+		add("verification", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Assured requires Verification", "AOF-VER-001")
+		add("verifier_independence", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Assured requires verifier independence based on Risk", "AOF-ARCH-016", "AOF-VER-015")
+		add("completion_gate", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Assured requires completion gate", "AOF-VER-012")
+		add("accountability_chain", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Assured requires accountability chain")
+		add("conformance_report", model.ApplicabilityApplicable, model.NormativeShould, "Assured adoption SHOULD produce formal conformance reporting")
 	} else {
-		add("independent_verification", "optional", model.StatusDeferred, "not required by selected baseline")
-		add("formal_conformance_evidence", "optional", model.StatusDeferred, "not required by selected baseline")
+		for _, n := range []string{"evidence_provenance", "verifier_independence", "completion_gate", "accountability_chain", "conformance_report"} {
+			add(n, model.ApplicabilityConditional, model.NormativeShould, "AOF-Assured strengthening")
+		}
 	}
 
-	objects := buildObjects(p, controls)
-	skills := []string{"aof-core", "aof-adoption", "aof-conformance"}
-	if p.AI.Enabled {
-		skills = append(skills, "aof-agent-design", "aof-authority", "aof-policy", "aof-risk")
+	secure := contains(opts.DomainProfiles, model.DomainSecureSDLC)
+	if secure {
+		add("secure_sdlc_requirements", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Secure-SDLC domain profile")
+		add("architecture_security_review", model.ApplicabilityApplicable, model.NormativeShould, "AOF-Secure-SDLC architecture/security review")
+		add("threat_modeling", model.ApplicabilityApplicable, model.NormativeShould, "AOF-Secure-SDLC threat modeling")
+		add("code_test_security_verification", model.ApplicabilityApplicable, model.NormativeShould, "AOF-Secure-SDLC code/test/security Verification")
+		add("release_authority_gate", model.ApplicabilityApplicable, model.NormativeMust, "AOF-Secure-SDLC release/deployment Authority gate")
+		add("human_control_gate", model.ApplicabilityApplicable, model.NormativeShould, "AOF-Secure-SDLC Human control gates according to Risk")
+		add("security_evidence", model.ApplicabilityConditional, model.NormativeShould, "SAST/SCA/DAST or equivalent Evidence when applicable")
 	}
+
+	if opts.HighAssurance {
+		add("separation_of_duties", model.ApplicabilityApplicable, model.NormativeMust, "AOF-High-Assurance strengthening")
+		add("verifier_independence", model.ApplicabilityApplicable, model.NormativeMust, "independent Verification is mandatory for High-Assurance", "AOF-VER-015", "AOF-VER-016")
+		add("critical_action_approval", model.ApplicabilityApplicable, model.NormativeMust, "explicit approval for defined Critical actions")
+		add("stronger_evidence", model.ApplicabilityApplicable, model.NormativeMust, "stronger Evidence requirements")
+		add("strict_authority_scope", model.ApplicabilityApplicable, model.NormativeMust, "strict Authority scope", "AOF-AUTH-019", "AOF-AUTH-020")
+		add("effect_boundary_revalidation", model.ApplicabilityApplicable, model.NormativeMust, "revalidation at Effect Boundary", "AOF-ARCH-009")
+		add("trace_protection", model.ApplicabilityApplicable, model.NormativeMust, "tamper-resistant or equivalent Trace protection", "AOF-TRC-013")
+		add("bounded_recovery", model.ApplicabilityApplicable, model.NormativeMust, "bounded Recovery")
+		add("residual_risk_handling", model.ApplicabilityApplicable, model.NormativeMust, "residual Risk handling", "AOF-RISK-008", "AOF-RISK-017")
+	}
+
+	// Project context can strengthen requirements without changing the selected profile.
+	if consequential && (p.Criticality == "high" || p.Criticality == "critical") {
+		add("verifier_independence", model.ApplicabilityApplicable, model.NormativeMust, "High/Critical consequential Risk requires independent Verification", "AOF-RISK-015", "AOF-RISK-016", "AOF-VER-015", "AOF-VER-016")
+	}
+	if p.DataSensitivity == "confidential" || p.DataSensitivity == "restricted" {
+		add("context_data_controls", model.ApplicabilityApplicable, model.NormativeMust, "sensitive context requires purpose/access/cross-boundary controls")
+		add("trace_data_controls", model.ApplicabilityApplicable, model.NormativeMust, "Trace MUST respect data classification/access/retention", "AOF-TRC-008", "AOF-TRC-009")
+	}
+
+	objects := buildObjects(p, profile, secure, opts.HighAssurance, consequential)
+	requirements := requirementRegistry(controls, profile, secure, opts.HighAssurance)
+	skills := []string{"aof-core", "aof-adoption", "aof-agent-design", "aof-authority", "aof-policy", "aof-risk", "aof-state-trace", "aof-conformance"}
 	if consequential {
-		skills = append(skills, "aof-execution", "aof-evidence-verification", "aof-state-trace")
+		skills = append(skills, "aof-execution", "aof-evidence-verification")
+	}
+	if secure {
+		skills = append(skills, "aof-secure-sdlc")
+	}
+	if opts.HighAssurance {
+		skills = append(skills, "aof-high-assurance")
 	}
 	sort.Strings(skills)
 
 	warnings := []string{}
 	for name, c := range controls {
-		if c.Status == model.StatusDeferred && c.Applicability == "required" {
-			warnings = append(warnings, name+": required control is deferred")
+		if c.AdoptionState == model.AdoptionUnsupported && c.NormativeLevel == model.NormativeMust {
+			warnings = append(warnings, name+": mandatory applicable control is unsupported; no conformance satisfaction is implied")
 		}
 	}
-	if consequential && p.AuthorityHolder == "unspecified" {
-		warnings = append(warnings, "authority: consequential execution is enabled but the authority holder is unspecified")
+	if consequential && (strings.TrimSpace(p.AuthorityHolder) == "" || p.AuthorityHolder == "unspecified") {
+		warnings = append(warnings, "authority: consequential execution is in scope but Authority holder is unspecified")
 	}
 	if consequential && p.PolicyMechanism == "prompt" {
 		warnings = append(warnings, "policy: prompt instructions do not satisfy PolicyEnforcement")
 	}
+	if profile == model.ProfileAssured && controls["verifier_independence"].Capability == "unsupported" {
+		warnings = append(warnings, "AOF-Assured target requires verifier independence but organizational capability is unavailable")
+	}
+	if secure && profile == model.ProfileCore {
+		warnings = append(warnings, "AOF-Secure-SDLC SHOULD compose with AOF-Governed/AOF-Assured controls according to assurance scope")
+	}
 	sort.Strings(warnings)
 
-	return model.AdoptionDefinition{Profile: profile, Mode: "greenfield", Controls: controls, CanonicalObjects: objects, RequiredSkills: skills, Warnings: warnings}
+	domains := append([]string(nil), opts.DomainProfiles...)
+	overlays := []string{}
+	if opts.HighAssurance {
+		overlays = append(overlays, model.OverlayHighAssurance)
+	}
+	mode := p.AdoptionMode
+	if mode == "" {
+		mode = "greenfield"
+	}
+	return model.AdoptionDefinition{
+		Profile: model.ProfileSelection{TargetBaseProfile: profile, DomainProfiles: domains, Overlays: overlays, ClaimedProfile: "", ClaimStatus: "none"},
+		Mode:    mode, Controls: controls, CanonicalObjects: objects, Requirements: requirements,
+		RequiredSkills: skills, Warnings: warnings,
+	}
 }
 
-func buildObjects(p model.ProjectDefinition, controls map[string]model.ControlSelection) map[string]model.ObjectSelection {
+func buildObjects(p model.ProjectDefinition, profile string, secure, high, consequential bool) map[string]model.ObjectSelection {
 	objects := map[string]model.ObjectSelection{}
+	set := func(name, applicability, level, state, reason string, reqs ...string) {
+		objects[name] = model.ObjectSelection{Applicability: applicability, NormativeLevel: level, AdoptionState: state, Reason: reason, RequirementIDs: reqs}
+	}
 	for _, name := range model.CanonicalObjects {
-		objects[name] = model.ObjectSelection{Status: model.StatusNotApplicable, Reason: "not selected by current project applicability rules"}
+		set(name, model.ApplicabilityConditional, model.NormativeShould, model.AdoptionPlanned, "conditional on project semantics")
 	}
-	required := func(name, reason string) {
-		objects[name] = model.ObjectSelection{Status: model.StatusRequired, Reason: reason}
+	for _, name := range []string{"Goal", "Task", "Agent", "ContextDescriptor", "Resource", "Capability", "AuthorityGrant", "Policy", "ActionProposal", "Decision", "StateTransition", "TraceEvent", "Outcome"} {
+		set(name, model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "AOF-Core project model")
 	}
-	applicable := func(name, reason string) {
-		objects[name] = model.ObjectSelection{Status: model.StatusEnabled, Reason: reason}
-	}
-
-	required("Goal", "all governed work originates from declared goals")
-	required("Task", "project work is decomposed into tasks")
-	required("ContextDescriptor", "context boundaries are needed for governed reasoning")
-	required("Resource", "resources accessed by actors must be bounded")
-	required("Capability", "Capability is distinct from Authority")
-	required("Policy", "Policy is part of execution authorization")
-	required("RiskAssessment", "Risk is part of execution authorization")
-	required("ActionProposal", "Proposal is distinct from Decision")
-	required("Decision", "Decision is distinct from Proposal and Action")
-	required("TraceEvent", "governance-relevant events require traceability")
-	required("Outcome", "governed actions require outcome representation")
-	if p.AI.Enabled {
-		required("Agent", "AI agents are declared")
-	}
-	if p.MultiAgent {
-		required("AgentInteractionContract", "multi-agent interaction declared")
-	}
-
-	consequential := p.AI.ConsequentialExecution || p.AI.StateMutation || p.AI.ExternalAction || p.AI.InfrastructureAction
 	if consequential {
-		required("AuthorityGrant", "consequential execution requires explicit Authority")
-		required("ExecutionContract", "consequential effects require a bounded execution contract")
-		required("Evidence", "Verification requires Evidence")
-		required("Verification", "consequential execution requires verification")
-		required("StateTransition", "persistent/external effects imply state transitions")
-		if p.HumanApproval {
-			applicable("Approval", "human approval declared")
+		for _, name := range []string{"RiskAssessment", "ExecutionContract", "Evidence", "Verification"} {
+			set(name, model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "consequential execution scope")
 		}
 	}
-	if c, ok := controls["escalation"]; ok && c.Status != model.StatusNotApplicable {
-		applicable("EscalationPackage", "escalation control is applicable")
+	if p.HumanApproval || profile != model.ProfileCore {
+		set("Approval", model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "human/profile governance gate")
 	}
-	if c, ok := controls["conformance_manifest"]; ok && c.Status != model.StatusNotApplicable {
-		applicable("ConformanceManifest", "selected adoption profile")
+	if p.MultiAgent {
+		set("AgentInteractionContract", model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "multi-Agent scope")
 	}
-	if c, ok := controls["formal_conformance_evidence"]; ok && c.Status == model.StatusEnabled {
-		applicable("ConformanceReport", "formal conformance evidence enabled")
+	if profile == model.ProfileGoverned || profile == model.ProfileAssured || secure || high {
+		set("EscalationPackage", model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "governed/escalation scope")
+		set("ConformanceManifest", model.ApplicabilityApplicable, model.NormativeShould, model.AdoptionPlanned, "explicit profile/scope declaration")
+	}
+	if profile == model.ProfileAssured || high {
+		set("Evidence", model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "AOF-Assured/High-Assurance")
+		set("Verification", model.ApplicabilityApplicable, model.NormativeMust, model.AdoptionPlanned, "AOF-Assured/High-Assurance")
+		set("ConformanceReport", model.ApplicabilityApplicable, model.NormativeShould, model.AdoptionPlanned, "formal assurance reporting")
 	}
 	return objects
+}
+
+func requirementRegistry(controls map[string]model.ControlSelection, profile string, secure, high bool) []model.Requirement {
+	seen := map[string]bool{}
+	out := []model.Requirement{}
+	for _, c := range controls {
+		for _, id := range c.RequirementIDs {
+			if seen[id] {
+				continue
+			}
+			seen[id] = true
+			out = append(out, requirementFor(id, profile))
+		}
+	}
+	for _, id := range []string{"AOF-PRF-001", "AOF-PRF-002", "AOF-PRF-006"} {
+		if !seen[id] {
+			seen[id] = true
+			out = append(out, requirementFor(id, profile))
+		}
+	}
+	if secure && !seen["AOF-PRF-004"] {
+		out = append(out, requirementFor("AOF-PRF-004", profile))
+	}
+	if high && !seen["AOF-PRF-005"] {
+		out = append(out, requirementFor("AOF-PRF-005", profile))
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+func requirementFor(id, profile string) model.Requirement {
+	domain := "Core"
+	switch {
+	case strings.Contains(id, "AUTH"):
+		domain = "Authority"
+	case strings.Contains(id, "POL"):
+		domain = "Policy"
+	case strings.Contains(id, "RISK"):
+		domain = "Risk"
+	case strings.Contains(id, "VER"):
+		domain = "Verification"
+	case strings.Contains(id, "TRC"):
+		domain = "Trace"
+	case strings.Contains(id, "ARCH"):
+		domain = "Architecture"
+	case strings.Contains(id, "PRF"):
+		domain = "Profile"
+	}
+	return model.Requirement{ID: id, Domain: domain, NormativeLevel: model.NormativeMust, AppliesTo: "project adoption", Profiles: []string{profile}, VerificationMethod: "implementation/conformance review", RequiredEvidence: []string{"project governance artifacts", "implementation evidence"}}
+}
+
+func contains(xs []string, want string) bool {
+	for _, x := range xs {
+		if x == want {
+			return true
+		}
+	}
+	return false
 }

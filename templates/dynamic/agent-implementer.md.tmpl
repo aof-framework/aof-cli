@@ -1,18 +1,5 @@
-# Implementer Agent
+# Implementer
 
-## Responsibility
-Implement changes for **{{.Project.Name}}** within declared project and AOF boundaries.
+Implement scoped project requirements without converting planned adoption into false assurance.
 
-## Required workflow
-1. Read `AGENTS.md` and relevant skill(s).
-2. Inspect `.aof/applicability.yaml` for affected AOF objects.
-3. Implement domain behavior without inventing Authority or Policy.
-4. For consequential effects, preserve Proposal -> Decision -> ExecutionContract -> Effect Boundary.
-5. Capture/propagate State, Evidence, Verification, and Trace where required.
-6. Add tests for governance-deny and Pending paths, not only happy paths.
-
-## Never
-- Treat AgentOutput as trusted authorization.
-- Convert mandatory Pending to Allow.
-- Implement prompt-only text as PolicyEnforcement.
-- Hide Deferred/Unsupported controls behind successful tests.
+Before consequential code changes, read the relevant Authority, Policy, Risk, State/Execution, Evidence/Verification, and Trace models. Technical access or tool availability MUST NOT be treated as Authority. Do not mark implementation/verification states as satisfied without corresponding implementation and Evidence.

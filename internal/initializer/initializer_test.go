@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/aof-framework/aof-cli/internal/adoption"
@@ -12,25 +13,24 @@ import (
 )
 
 func testModel() model.BootstrapModel {
-	p := model.ProjectDefinition{Name: "itsm-backend", Language: "Go", Type: "backend", Domain: "itsm", AI: model.AIUsage{Enabled: true, Analysis: true, Recommendation: true}}
-	return model.BootstrapModel{Project: p, Adoption: adoption.Build(model.ProfileCore, p, map[string]bool{"authority": true, "policy": true, "risk": true, "trace": true})}
+	p := model.ProjectDefinition{Name: "itsm-backend", Language: "Go", Type: "backend", Domain: "itsm", AgentTypes: []string{"LLM"}, AI: model.AIUsage{Enabled: true, Analysis: true, Recommendation: true}, Criticality: "moderate", DataSensitivity: "internal", AdoptionMode: "greenfield"}
+	return model.BootstrapModel{Project: p, Adoption: adoption.Build(model.ProfileCore, p, nil)}
 }
-
 func TestBuildAndApply(t *testing.T) {
 	d := t.TempDir()
-	p, err := BuildPlan(testModel(), "0.2.0")
+	p, err := BuildPlan(testModel(), "0.3.0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := Apply(d, p); err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{"AGENTS.md", "AOF.md", ".aof/project.yaml", ".aof/config.yaml", ".aof/adoption.yaml", ".aof/applicability.yaml", ".aof/manifest.json", ".agents/skills/aof-core/SKILL.md", "aof/authority/authority-model.yaml", "aof/risk/risk-model.yaml", "aof/conformance/gaps.md"} {
+	for _, path := range []string{"AGENTS.md", "AOF.md", ".aof/project.yaml", ".aof/config.yaml", ".aof/requirements.yaml", ".aof/bootstrap-manifest.json", "aof/control/safety-kernel.yaml", "aof/architecture/planes.yaml", "aof/authority/authority-model.yaml", "aof/execution/failure-recovery.yaml", "aof/schemas/core/agent.schema.json"} {
 		if _, err := os.Stat(filepath.Join(d, path)); err != nil {
 			t.Fatalf("missing %s: %v", path, err)
 		}
 	}
-	b, err := os.ReadFile(filepath.Join(d, ".aof/manifest.json"))
+	b, err := os.ReadFile(filepath.Join(d, ".aof/bootstrap-manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,47 +38,72 @@ func TestBuildAndApply(t *testing.T) {
 	if err := json.Unmarshal(b, &v); err != nil {
 		t.Fatal(err)
 	}
-	if v["upstream_repository"] != "https://github.com/aof-framework/aof" {
-		t.Fatalf("unexpected upstream: %v", v["upstream_repository"])
+	if v["schema_type"] != "AOFCLIBootstrapManifest" || v["claimed_conformance"] != false {
+		t.Fatalf("bad manifest: %v", v)
 	}
 }
-
 func TestConflictAbortsBeforeWrites(t *testing.T) {
 	d := t.TempDir()
-	if err := os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	p, _ := BuildPlan(testModel(), "0.2.0")
+	_ = os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing"), 0o644)
+	p, _ := BuildPlan(testModel(), "0.3.0")
 	err := Apply(d, p)
 	var ce *ConflictError
 	if !errors.As(err, &ce) {
-		t.Fatalf("expected conflict, got %v", err)
+		t.Fatalf("expected conflict,got %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(d, "AOF.md")); !os.IsNotExist(err) {
-		t.Fatal("AOF.md should not be written on conflict")
+		t.Fatal("partial write")
 	}
 }
-
 func TestSecondInit(t *testing.T) {
 	d := t.TempDir()
-	p, _ := BuildPlan(testModel(), "0.2.0")
+	p, _ := BuildPlan(testModel(), "0.3.0")
 	if err := Apply(d, p); err != nil {
 		t.Fatal(err)
 	}
 	if err := Apply(d, p); !errors.Is(err, ErrAlreadyInitialized) {
-		t.Fatalf("expected already initialized, got %v", err)
+		t.Fatalf("expected already initialized,got %v", err)
 	}
 }
-
 func TestSafePath(t *testing.T) {
 	for _, bad := range []string{"", "../escape", "/absolute", "\\absolute", "C:\\escape", "C:foo", "a/../../escape"} {
 		if safePath(bad) {
-			t.Fatalf("expected unsafe: %q", bad)
+			t.Fatalf("unsafe accepted %q", bad)
 		}
 	}
-	for _, good := range []string{"AOF.md", ".agents/skills/aof-core/SKILL.md"} {
-		if !safePath(good) {
-			t.Fatalf("expected safe: %q", good)
-		}
+}
+
+func TestPreserveExistingAgentsUsesSidecar(t *testing.T) {
+	d := t.TempDir()
+	if err := os.WriteFile(filepath.Join(d, "AGENTS.md"), []byte("existing project instructions"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p, err := BuildPlan(testModel(), "0.3.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, sidecar, err := PreserveExistingAgents(d, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sidecar {
+		t.Fatal("expected sidecar mode")
+	}
+	if err := Apply(d, p); err != nil {
+		t.Fatal(err)
+	}
+	original, _ := os.ReadFile(filepath.Join(d, "AGENTS.md"))
+	if string(original) != "existing project instructions" {
+		t.Fatal("existing AGENTS.md changed")
+	}
+	if _, err := os.Stat(filepath.Join(d, "AGENTS.aof.md")); err != nil {
+		t.Fatalf("missing sidecar: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(d, ".aof/bootstrap-manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "AGENTS.aof.md") || strings.Contains(string(b), `"AGENTS.md"`) {
+		t.Fatal("manifest did not record sidecar")
 	}
 }

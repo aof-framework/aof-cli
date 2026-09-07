@@ -17,7 +17,7 @@ import (
 	"github.com/aof-framework/aof-cli/internal/model"
 )
 
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 func Run(args []string, in io.Reader, out, errOut io.Writer) int {
 	if len(args) == 0 {
@@ -41,20 +41,20 @@ func Run(args []string, in io.Reader, out, errOut io.Writer) int {
 }
 
 func printHelp(w io.Writer) {
-	fmt.Fprintln(w, "AOF CLI — Context & Adoption Hardening")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "  aof init [flags]")
-	fmt.Fprintln(w, "  aof version")
-	fmt.Fprintln(w, "  aof help")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "aof init discovers project context, interviews for applicable AOF governance,")
-	fmt.Fprintln(w, "builds a scoped adoption model, and generates project-aware Agent Skills and controls.")
+	fmt.Fprintln(w, "AOF CLI — Semantic Fidelity & Adoption Hardening")
+	fmt.Fprintln(w, "\nUsage:\n  aof init [flags]\n  aof version\n  aof help")
+	fmt.Fprintln(w, "\nKey init flags:")
+	fmt.Fprintln(w, "  --profile core|governed|assured")
+	fmt.Fprintln(w, "  --secure-sdlc                 add AOF-Secure-SDLC domain profile")
+	fmt.Fprintln(w, "  --high-assurance              add AOF-High-Assurance overlay")
+	fmt.Fprintln(w, "  --agent-types <csv>           LLM,Deterministic,Human,Hybrid,ExternalService")
+	fmt.Fprintln(w, "  --non-interactive")
+	fmt.Fprintln(w, "\naof init scopes canonical AOF v1.0 LTS requirements; it does not claim implementation or conformance.")
 }
 
 func printVersion(w io.Writer) {
 	fmt.Fprintf(w, "AOF CLI v%s\n", Version)
-	fmt.Fprintln(w, "Release: AOF Context & Adoption Hardening")
+	fmt.Fprintln(w, "Release: Semantic Fidelity & Adoption Hardening")
 	fmt.Fprintln(w, "AOF Specification v1.0 LTS")
 	fmt.Fprintln(w, "Canonical Upstream: https://github.com/aof-framework/aof")
 }
@@ -68,41 +68,33 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 	domain := fs.String("domain", "", "project domain")
 	architecture := fs.String("architecture", "", "architecture style")
 	deployment := fs.String("deployment", "", "deployment model")
-	criticality := fs.String("criticality", "", "project criticality: low, moderate, high, critical")
-	dataSensitivity := fs.String("data-sensitivity", "", "data sensitivity: public, internal, confidential, restricted")
-	profile := fs.String("profile", "core", "AOF profile: core, governed, assured")
+	criticality := fs.String("criticality", "", "low, moderate, high, critical")
+	dataSensitivity := fs.String("data-sensitivity", "", "public, internal, confidential, restricted")
+	profile := fs.String("profile", "core", "core, governed, assured")
+	secureSDLC := fs.Bool("secure-sdlc", false, "compose AOF-Secure-SDLC domain profile")
+	highAssurance := fs.Bool("high-assurance", false, "compose AOF-High-Assurance overlay")
 	features := fs.String("features", "", "comma-separated project features")
-	agentCount := fs.String("agent-count", "", "logical AI agent count or description")
-	multiAgent := fs.Bool("multi-agent", false, "declare multi-agent interactions")
-	humanApproval := fs.Bool("human-approval", false, "declare human approval for consequential actions")
-	authorityHolder := fs.String("authority-holder", "", "ultimate/operational authority holder")
-	policyMechanism := fs.String("policy-mechanism", "", "policy enforcement: code, engine, workflow, manual, mixed, prompt, unavailable")
+	agentTypes := fs.String("agent-types", "", "comma-separated Agent types")
+	multiAgent := fs.Bool("multi-agent", false, "declare Agent interaction/delegation")
+	humanApproval := fs.Bool("human-approval", false, "declare Human approval gate")
+	authorityHolder := fs.String("authority-holder", "", "Authority holder/granting authority")
+	policyMechanism := fs.String("policy-mechanism", "", "code, engine, workflow, manual, mixed, prompt, unavailable")
 	effectTypes := fs.String("effect-types", "", "comma-separated consequential effect types")
 	riskCategories := fs.String("risk-categories", "", "comma-separated risk categories")
-	ai := fs.Bool("ai", false, "declare AI usage")
-	analysis := fs.Bool("ai-analysis", false, "AI analysis use case")
-	classification := fs.Bool("ai-classification", false, "AI classification use case")
-	recommendation := fs.Bool("ai-recommendation", false, "AI recommendation use case")
-	toolUse := fs.Bool("ai-tool-use", false, "AI may invoke tools")
+	ai := fs.Bool("ai", false, "declare LLM/AI Agent usage")
+	analysis := fs.Bool("ai-analysis", false, "AI analysis")
+	classification := fs.Bool("ai-classification", false, "AI classification")
+	recommendation := fs.Bool("ai-recommendation", false, "AI recommendation")
+	toolUse := fs.Bool("ai-tool-use", false, "AI tool invocation")
 	stateMutation := fs.Bool("ai-state-mutation", false, "AI may initiate persistent state mutation")
-	externalAction := fs.Bool("ai-external-action", false, "AI may initiate external API/system mutation")
-	infraAction := fs.Bool("ai-infrastructure-action", false, "AI may initiate infrastructure/deployment actions")
-	consequential := fs.Bool("ai-consequential", false, "AI may perform consequential execution")
-	supportsEvidence := fs.Bool("supports-evidence", false, "organization supports formal Evidence lifecycle")
-	supportsIndependentVerification := fs.Bool("supports-independent-verification", false, "organization supports independent Verification")
-	supportsConformance := fs.Bool("supports-conformance", false, "organization supports formal conformance evidence/reporting")
+	externalAction := fs.Bool("ai-external-action", false, "AI may initiate external mutation")
+	infraAction := fs.Bool("ai-infrastructure-action", false, "AI may initiate infrastructure action")
+	consequential := fs.Bool("ai-consequential", false, "AI may initiate consequential execution")
+	supportsEvidence := fs.Bool("supports-evidence", false, "organization has formal Evidence lifecycle capability")
+	supportsIndependentVerification := fs.Bool("supports-independent-verification", false, "organization has independent Verification capability")
+	supportsConformance := fs.Bool("supports-conformance", false, "organization has formal conformance reporting capability")
 	nonInteractive := fs.Bool("non-interactive", false, "disable interactive prompts")
-	fs.Usage = func() {
-		fmt.Fprintln(out, "Usage of aof init:")
-		fmt.Fprintln(out)
-		fmt.Fprintln(out, "Flags:")
-		fs.SetOutput(out)
-		fs.PrintDefaults()
-	}
 	if err := fs.Parse(args); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return 0
-		}
 		return 2
 	}
 
@@ -119,14 +111,11 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 	if *language == "" {
 		*language = detected.Language
 	}
-	if *projectType == "" && detected.Type != "" {
-		*projectType = detected.Type
-	}
 
 	if !*nonInteractive {
-		fmt.Fprintln(out, "AOF Context & Adoption Interview")
-		fmt.Fprintln(out, "--------------------------------")
-		fmt.Fprintln(out, "AOF semantics are fixed; this interview scopes their applicability to this project.")
+		fmt.Fprintln(out, "AOF v0.3 Adoption Interview")
+		fmt.Fprintln(out, "---------------------------")
+		fmt.Fprintln(out, "AOF semantics are fixed. Answers scope applicability; they do NOT prove implementation or conformance.")
 		fmt.Fprintln(out)
 		*name = ask(reader, out, "Project name", *name)
 		*language = ask(reader, out, "Language", defaultValue(*language, "unspecified"))
@@ -136,15 +125,26 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 		*deployment = ask(reader, out, "Deployment model", defaultValue(*deployment, "unspecified"))
 		*criticality = ask(reader, out, "Criticality (low/moderate/high/critical)", defaultValue(*criticality, "moderate"))
 		*dataSensitivity = ask(reader, out, "Data sensitivity (public/internal/confidential/restricted)", defaultValue(*dataSensitivity, "internal"))
-		*profile = ask(reader, out, "AOF profile (core/governed/assured)", *profile)
+		*profile = ask(reader, out, "Base AOF profile (core/governed/assured)", *profile)
+		if !*secureSDLC {
+			*secureSDLC = askBool(reader, out, "Apply AOF-Secure-SDLC domain profile", isSoftwareProject(*projectType))
+		}
+		if !*highAssurance {
+			*highAssurance = askBool(reader, out, "Apply AOF-High-Assurance strengthening", false)
+		}
+		if *agentTypes == "" {
+			*agentTypes = ask(reader, out, "Operational Agent types (comma-separated: LLM,Deterministic,Human,Hybrid,ExternalService)", "Deterministic")
+		}
 		if !*ai {
-			*ai = askBool(reader, out, "Will this project use AI agents", false)
+			*ai = containsAgentType(*agentTypes, "LLM") || askBool(reader, out, "Will this project use LLM/AI Agents", false)
+		}
+		if *ai && !containsAgentType(*agentTypes, "LLM") {
+			*agentTypes = appendCSV(*agentTypes, "LLM")
+		}
+		if !*multiAgent {
+			*multiAgent = askBool(reader, out, "Will Agents interact or delegate to other Agents", false)
 		}
 		if *ai {
-			*agentCount = ask(reader, out, "Logical AI agent count/description", defaultValue(*agentCount, "1"))
-			if !*multiAgent {
-				*multiAgent = askBool(reader, out, "Will agents interact/delegate to other agents", false)
-			}
 			if !*analysis {
 				*analysis = askBool(reader, out, "AI analysis", true)
 			}
@@ -169,23 +169,23 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 			if !*consequential {
 				*consequential = askBool(reader, out, "Consequential AI execution", *stateMutation || *externalAction || *infraAction)
 			}
-			if *consequential || *stateMutation || *externalAction || *infraAction {
-				*effectTypes = ask(reader, out, "Consequential effect types (comma-separated: database,external-api,infrastructure,account,financial,approval-state,other)", defaultValue(*effectTypes, inferEffects(*stateMutation, *externalAction, *infraAction)))
-				*authorityHolder = ask(reader, out, "Who holds/ grants operational Authority", defaultValue(*authorityHolder, "unspecified"))
-				if !*humanApproval {
-					*humanApproval = askBool(reader, out, "Human approval required for consequential actions", true)
-				}
-				*policyMechanism = ask(reader, out, "Policy enforcement (code/engine/workflow/manual/mixed/prompt/unavailable)", defaultValue(*policyMechanism, "code"))
-				*riskCategories = ask(reader, out, "Risk categories (comma-separated: integrity,confidentiality,financial,availability,security,infrastructure,compliance,irreversible,customer-impact)", defaultValue(*riskCategories, "integrity,availability,security"))
-				if !*supportsEvidence {
-					*supportsEvidence = askBool(reader, out, "Formal Evidence lifecycle available", true)
-				}
-				if !*supportsIndependentVerification {
-					*supportsIndependentVerification = askBool(reader, out, "Independent Verification available", false)
-				}
-				if !*supportsConformance {
-					*supportsConformance = askBool(reader, out, "Formal conformance evidence/reporting available", false)
-				}
+		}
+		if *consequential || *stateMutation || *externalAction || *infraAction {
+			*effectTypes = ask(reader, out, "Consequential effect types (comma-separated)", defaultValue(*effectTypes, inferEffects(*stateMutation, *externalAction, *infraAction)))
+			*authorityHolder = ask(reader, out, "Who holds/grants operational Authority", defaultValue(*authorityHolder, "unspecified"))
+			if !*humanApproval {
+				*humanApproval = askBool(reader, out, "Human approval required for consequential actions", true)
+			}
+			*policyMechanism = ask(reader, out, "Policy enforcement (code/engine/workflow/manual/mixed/prompt/unavailable)", defaultValue(*policyMechanism, "code"))
+			*riskCategories = ask(reader, out, "Risk categories (comma-separated)", defaultValue(*riskCategories, "integrity,availability,security"))
+			if !*supportsEvidence {
+				*supportsEvidence = askBool(reader, out, "Formal Evidence lifecycle capability available", true)
+			}
+			if !*supportsIndependentVerification {
+				*supportsIndependentVerification = askBool(reader, out, "Independent Verification capability available", false)
+			}
+			if !*supportsConformance {
+				*supportsConformance = askBool(reader, out, "Formal conformance reporting capability available", false)
 			}
 		}
 	}
@@ -195,44 +195,81 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 	*domain = defaultValue(*domain, "unspecified")
 	*architecture = defaultValue(*architecture, "unspecified")
 	*deployment = defaultValue(*deployment, "unspecified")
-	*criticality = defaultValue(*criticality, "moderate")
-	*dataSensitivity = defaultValue(*dataSensitivity, "internal")
-	*agentCount = defaultValue(*agentCount, func() string {
-		if *ai {
-			return "1"
-		}
-		return "0"
-	}())
+	*criticality = strings.ToLower(defaultValue(*criticality, "moderate"))
+	*dataSensitivity = strings.ToLower(defaultValue(*dataSensitivity, "internal"))
 	*authorityHolder = defaultValue(*authorityHolder, "unspecified")
-	*policyMechanism = defaultValue(*policyMechanism, "unspecified")
+	*policyMechanism = strings.ToLower(defaultValue(*policyMechanism, "unspecified"))
 
 	p := model.NormalizeProfile(*profile)
 	if p == "" {
 		fmt.Fprintln(errOut, "invalid profile; use core, governed, or assured")
 		return 2
 	}
-	aiUsage := model.AIUsage{
-		Enabled:  *ai || *analysis || *classification || *recommendation || *toolUse || *stateMutation || *externalAction || *infraAction || *consequential,
-		Analysis: *analysis, Classification: *classification, Recommendation: *recommendation, ToolUse: *toolUse,
-		StateMutation: *stateMutation, ExternalAction: *externalAction, InfrastructureAction: *infraAction,
-		ConsequentialExecution: *consequential || *stateMutation || *externalAction || *infraAction,
+	if *secureSDLC && p == model.ProfileCore {
+		fmt.Fprintln(errOut, "AOF-Secure-SDLC requires a governed or assured base profile")
+		return 2
 	}
-	project := model.ProjectDefinition{
-		Name: *name, Language: *language, Type: *projectType, Domain: *domain, Architecture: *architecture, Deployment: *deployment,
-		Criticality: *criticality, DataSensitivity: *dataSensitivity, Features: splitList(*features), AI: aiUsage,
-		AgentCount: *agentCount, MultiAgent: *multiAgent, HumanApproval: *humanApproval, AuthorityHolder: *authorityHolder,
-		PolicyMechanism: *policyMechanism, RiskCategories: splitList(*riskCategories), EffectTypes: splitList(*effectTypes),
+	if *highAssurance && p != model.ProfileAssured {
+		fmt.Fprintln(errOut, "AOF-High-Assurance requires the assured base profile")
+		return 2
 	}
-	capabilities := map[string]bool{
-		"authority": true, "policy": *policyMechanism != "unavailable", "risk": true, "trace": true,
-		"evidence": *supportsEvidence || !aiUsage.ConsequentialExecution, "verification": true,
-		"independent_verification": *supportsIndependentVerification, "formal_conformance_evidence": *supportsConformance,
+	if !oneOf(*criticality, "low", "moderate", "high", "critical") {
+		fmt.Fprintln(errOut, "invalid criticality; use low, moderate, high, or critical")
+		return 2
 	}
-	adopt := adoption.Build(p, project, capabilities)
+	if !oneOf(*dataSensitivity, "public", "internal", "confidential", "restricted") {
+		fmt.Fprintln(errOut, "invalid data sensitivity; use public, internal, confidential, or restricted")
+		return 2
+	}
+	if !oneOf(*policyMechanism, "unspecified", "code", "engine", "workflow", "manual", "mixed", "prompt", "unavailable") {
+		fmt.Fprintln(errOut, "invalid policy mechanism")
+		return 2
+	}
+
+	types, err := normalizeAgentTypes(*agentTypes, *ai)
+	if err != nil {
+		fmt.Fprintln(errOut, err)
+		return 2
+	}
+	aiUsage := model.AIUsage{Enabled: *ai || contains(types, "LLM"), Analysis: *analysis, Classification: *classification, Recommendation: *recommendation, ToolUse: *toolUse, StateMutation: *stateMutation, ExternalAction: *externalAction, InfrastructureAction: *infraAction, ConsequentialExecution: *consequential || *stateMutation || *externalAction || *infraAction}
+	mode := "greenfield"
+	if detected.ExistingProject {
+		mode = "brownfield"
+	}
+	project := model.ProjectDefinition{Name: *name, Language: *language, Type: *projectType, Domain: *domain, Architecture: *architecture, Deployment: *deployment, Criticality: *criticality, DataSensitivity: *dataSensitivity, Features: splitList(*features), AI: aiUsage, AgentTypes: types, MultiAgent: *multiAgent, HumanApproval: *humanApproval, AuthorityHolder: *authorityHolder, PolicyMechanism: *policyMechanism, RiskCategories: splitList(*riskCategories), EffectTypes: splitList(*effectTypes), AdoptionMode: mode}
+
+	capabilities := map[string]bool{}
+	if *policyMechanism == "unavailable" {
+		capabilities["policy"] = false
+	}
+	if *supportsEvidence {
+		capabilities["evidence"] = true
+		capabilities["evidence_provenance"] = true
+	}
+	if *supportsIndependentVerification {
+		capabilities["verifier_independence"] = true
+	}
+	if *supportsConformance {
+		capabilities["conformance_manifest"] = true
+		capabilities["conformance_report"] = true
+	}
+	domainProfiles := []string{}
+	if *secureSDLC {
+		domainProfiles = append(domainProfiles, model.DomainSecureSDLC)
+	}
+	adopt := adoption.BuildWithOptions(p, project, capabilities, adoption.Options{DomainProfiles: domainProfiles, HighAssurance: *highAssurance})
 	plan, err := initializer.BuildPlan(model.BootstrapModel{Project: project, Adoption: adopt}, Version)
 	if err != nil {
 		fmt.Fprintf(errOut, "build initialization plan: %v\n", err)
 		return 1
+	}
+	plan, agentsSidecar, err := initializer.PreserveExistingAgents(root, plan)
+	if err != nil {
+		fmt.Fprintf(errOut, "preserve existing AGENTS.md: %v\n", err)
+		return 1
+	}
+	if agentsSidecar {
+		adopt.Warnings = append(adopt.Warnings, "existing AGENTS.md preserved; review and merge generated AGENTS.aof.md explicitly")
 	}
 	if err := initializer.Apply(root, plan); err != nil {
 		if errors.Is(err, initializer.ErrAlreadyInitialized) {
@@ -256,18 +293,19 @@ func runInit(args []string, in io.Reader, out, errOut io.Writer) int {
 }
 
 func printSummary(w io.Writer, p model.ProjectDefinition, a model.AdoptionDefinition, files int) {
-	required, enabled, deferred, na := 0, 0, 0, 0
+	applicable, planned, unsupported, conditional := 0, 0, 0, 0
 	for _, c := range a.Controls {
-		if c.Applicability == "required" {
-			required++
+		if c.Applicability == model.ApplicabilityApplicable {
+			applicable++
 		}
-		switch c.Status {
-		case model.StatusEnabled:
-			enabled++
-		case model.StatusDeferred:
-			deferred++
-		case model.StatusNotApplicable:
-			na++
+		if c.Applicability == model.ApplicabilityConditional {
+			conditional++
+		}
+		switch c.AdoptionState {
+		case model.AdoptionPlanned:
+			planned++
+		case model.AdoptionUnsupported:
+			unsupported++
 		}
 	}
 	fmt.Fprintln(w)
@@ -275,24 +313,48 @@ func printSummary(w io.Writer, p model.ProjectDefinition, a model.AdoptionDefini
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Project")
 	fmt.Fprintln(w, "-------")
-	fmt.Fprintf(w, "Name: %s\nLanguage: %s\nType: %s\nArchitecture: %s\nProfile: %s\n\n", p.Name, p.Language, p.Type, p.Architecture, a.Profile)
-	fmt.Fprintln(w, "AI Governance")
-	fmt.Fprintln(w, "-------------")
-	fmt.Fprintf(w, "AI agents: %t\nConsequential execution: %t\nMulti-agent: %t\n\n", p.AI.Enabled, p.AI.ConsequentialExecution, p.MultiAgent)
-	fmt.Fprintln(w, "Adoption")
-	fmt.Fprintln(w, "--------")
-	fmt.Fprintf(w, "Required control families: %d\nEnabled: %d\nDeferred: %d\nNot applicable: %d\nApplicable Agent Skills: %d\nGenerated files: %d\n", required, enabled, deferred, na, len(a.RequiredSkills), files)
+	fmt.Fprintf(w, "Name: %s\nLanguage: %s\nType: %s\nArchitecture: %s\nAdoption mode: %s\n\n", p.Name, p.Language, p.Type, p.Architecture, a.Mode)
+	fmt.Fprintln(w, "AOF Profile Target")
+	fmt.Fprintln(w, "------------------")
+	fmt.Fprintf(w, "Base: %s\nDomain: %s\nOverlay: %s\nClaimed conformance: none\n\n", a.Profile.TargetBaseProfile, emptyDash(strings.Join(a.Profile.DomainProfiles, ", ")), emptyDash(strings.Join(a.Profile.Overlays, ", ")))
+	fmt.Fprintln(w, "Governance Scope")
+	fmt.Fprintln(w, "----------------")
+	fmt.Fprintf(w, "Agent types: %s\nConsequential execution: %t\nMulti-Agent: %t\nApplicable controls: %d\nConditional controls: %d\nPlanned controls: %d\nUnsupported mandatory/selected capability controls: %d\nRequirements indexed: %d\nGenerated files: %d\n", strings.Join(p.AgentTypes, ", "), p.AI.ConsequentialExecution, p.MultiAgent, applicable, conditional, planned, unsupported, len(a.Requirements), files)
 	if len(a.Warnings) > 0 {
-		fmt.Fprintln(w, "\nGovernance warnings")
-		fmt.Fprintln(w, "-------------------")
+		fmt.Fprintln(w, "\nGovernance warnings\n-------------------")
 		for _, warning := range a.Warnings {
 			fmt.Fprintf(w, "! %s\n", warning)
 		}
 	}
-	fmt.Fprintln(w, "\nNext: review AOF.md and aof/conformance/gaps.md")
+	fmt.Fprintln(w, "\nImportant: generated adoption states are plans, NOT implementation or conformance results.")
+	fmt.Fprintln(w, "Next: review AOF.md, .aof/applicability.yaml, .aof/requirements.yaml, and aof/conformance/gaps.md")
 	fmt.Fprintln(w, "Canonical AOF: https://github.com/aof-framework/aof")
 }
 
+func normalizeAgentTypes(v string, ai bool) ([]string, error) {
+	raw := splitList(v)
+	if len(raw) == 0 {
+		if ai {
+			raw = []string{"LLM"}
+		} else {
+			raw = []string{"Deterministic"}
+		}
+	}
+	seen := map[string]bool{}
+	out := []string{}
+	for _, x := range raw {
+		n := model.NormalizeAgentType(x)
+		if n == "" {
+			return nil, fmt.Errorf("invalid Agent type %q; use LLM, Deterministic, Human, Hybrid, or ExternalService", x)
+		}
+		if !seen[n] {
+			seen[n] = true
+			out = append(out, n)
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
 func ask(r *bufio.Reader, w io.Writer, label, def string) string {
 	if def != "" {
 		fmt.Fprintf(w, "%s [%s]: ", label, def)
@@ -353,4 +415,44 @@ func inferEffects(state, external, infra bool) string {
 		return "other"
 	}
 	return strings.Join(parts, ",")
+}
+func oneOf(v string, vals ...string) bool {
+	for _, x := range vals {
+		if v == x {
+			return true
+		}
+	}
+	return false
+}
+func contains(xs []string, want string) bool {
+	for _, x := range xs {
+		if x == want {
+			return true
+		}
+	}
+	return false
+}
+func containsAgentType(csv, want string) bool {
+	for _, x := range splitList(csv) {
+		if model.NormalizeAgentType(x) == want {
+			return true
+		}
+	}
+	return false
+}
+func appendCSV(v, x string) string {
+	if strings.TrimSpace(v) == "" {
+		return x
+	}
+	return v + "," + x
+}
+func isSoftwareProject(t string) bool {
+	s := strings.ToLower(t)
+	return strings.Contains(s, "backend") || strings.Contains(s, "frontend") || strings.Contains(s, "fullstack") || strings.Contains(s, "software") || strings.Contains(s, "api")
+}
+func emptyDash(v string) string {
+	if strings.TrimSpace(v) == "" {
+		return "-"
+	}
+	return v
 }

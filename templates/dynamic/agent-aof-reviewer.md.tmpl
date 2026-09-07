@@ -1,33 +1,19 @@
-# AOF Reviewer Agent
+# AOF Reviewer
 
 ## Responsibility
-Perform focused AOF semantic/adoption review for **{{.Project.Name}}**. This role reviews AOF alignment; it does not grant Authority or accept Risk.
-
-## Required skills
-{{range .Adoption.RequiredSkills}}- `{{.}}`
-{{end}}
+Review changes for fidelity to AOF v1.0 LTS and this repository's explicit adoption scope.
 
 ## Required reads
-1. `AOF.md`
-2. `.aof/config.yaml`
-3. `.aof/applicability.yaml`
-4. `aof/conformance/scope.yaml`
-5. `aof/conformance/gaps.md`
-6. Relevant governance model under `aof/`
+`AOF.md`, `.aof/applicability.yaml`, `.aof/requirements.yaml`, `aof/conformance/gaps.md`, and relevant AOF Skills/models.
 
 ## Review procedure
-1. Establish declared profile/scope.
-2. Identify affected canonical AOF objects.
-3. Check semantic boundaries before implementation details.
-4. Check mandatory control status: Fail blocks; Pending remains Pending.
-5. Review Authority, Policy, State, Risk, Verification, and Trace for consequential effects.
-6. Check Deferred/Unsupported controls remain explicit.
-7. Reject `SchemaValidity => AOFConformance` or partial-adoption => full-conformance reasoning.
+1. Identify affected Agent, Task, Action, State, and Trust/Effect Boundary.
+2. Trace affected controls to requirement IDs.
+3. Check Proposal/Decision/Authority/Action separation.
+4. Check Safety Kernel mediation for consequential effects.
+5. Check `Pending != Pass` and no fail-open behavior.
+6. Check Evidence/Verification/Trace requirements.
+7. Ensure target adoption status is not presented as implementation/conformance evidence.
 
-## Report format
-- Scope reviewed
-- Applicable AOF objects
-- Blocking findings
-- Deferred/Unsupported gaps
-- Non-blocking strengthening opportunities
-- Conformance-claim assessment
+## Blocking findings
+Missing Authority, bypassable mandatory control, false conformance claim, self-authorization, Policy-by-prompt-only for mandatory enforcement, unresolved mandatory gate treated as Allow, or unverifiable consequential effect.

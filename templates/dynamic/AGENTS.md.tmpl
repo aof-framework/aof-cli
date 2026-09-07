@@ -1,28 +1,35 @@
 # Repository Instructions
 
-This repository contains **{{.Project.Name}}** and adopts **AOF v1.0 LTS** using **{{.Adoption.Profile}}**.
+This repository contains **{{.Project.Name}}** and uses AOF v1.0 LTS as its governance framework.
 
-## Project
+## Project context
 
 - Language: {{.Project.Language}}
 - Type: {{.Project.Type}}
 - Domain: {{.Project.Domain}}
 - Architecture: {{.Project.Architecture}}
-- Deployment: {{.Project.Deployment}}
 - Criticality: {{.Project.Criticality}}
 - Data sensitivity: {{.Project.DataSensitivity}}
+- Agent types: {{join .Project.AgentTypes ", "}}
 
-## AOF Routing
+## AOF target
 
-Before changing AI automation, Agent capabilities, Authority, Approval, Policy, Risk, consequential execution, State, Evidence, Verification, Trace, or Conformance:
+- Base profile: **{{.Adoption.Profile.TargetBaseProfile}}**
+- Domain profiles: {{join .Adoption.Profile.DomainProfiles ", "}}
+- Strengthening overlays: {{join .Adoption.Profile.Overlays ", "}}
+- Claimed conformance: **none**
+
+`aof init` generated an adoption plan. It did **not** verify implementation or create a conformance claim.
+
+Before modifying AI/Agent behavior, authority, policy, risk, state, consequential execution, Evidence, Verification, Trace, delegation, release gates, or recovery:
 
 1. Read `AOF.md`.
-2. Read `.aof/applicability.yaml` and `.aof/config.yaml`.
-3. Load the relevant skill under `.agents/skills/`.
-4. Read the relevant project model under `aof/`.
-5. Surface a gap instead of inventing missing Authority, Policy, Risk, Evidence, or Verification.
+2. Read `.aof/applicability.yaml` and `.aof/requirements.yaml`.
+3. Read the relevant model under `aof/`.
+4. Load the relevant `.agents/skills/aof-*` Skill.
+5. Do not change `implementation_state` or `verification_state` to a passing value without objective implementation Evidence and evaluation.
 
-## Canonical semantic boundaries
+Preserve these invariants:
 
 - `Reasoning != Decision != Authority != Action`
 - `Capability != Authority`
@@ -34,25 +41,6 @@ Before changing AI automation, Agent capabilities, Authority, Approval, Policy, 
 - `Pending != Pass`
 - `Claim != Evidence != Verification`
 - `SchemaValidity != SemanticValidity != AOFConformance`
+- Human/Organization remains `GovernanceRoot`.
 
-## Project execution posture
-
-{{if .Project.AI.ConsequentialExecution}}Consequential AI execution **is in scope**. AI output MUST NOT be wired directly to an Effect. Preserve Proposal -> governance evaluation -> AuthorizedDecision -> ExecutionContract -> Effect Boundary -> Evidence -> Verification -> Trace.{{else}}Consequential AI execution is **not declared in scope**. AI output is advisory/propositional unless the reviewed AOF adoption model is updated.{{end}}
-
-## Applicable AOF skills
-
-{{range .Adoption.RequiredSkills}}- `.agents/skills/{{.}}/SKILL.md`
-{{end}}
-
-## Generated governance models
-
-- `aof/governance/`
-- `aof/agents/`
-- `aof/authority/`
-- `aof/policies/`
-- `aof/risk/`
-- `aof/execution/`
-- `aof/assurance/`
-- `aof/conformance/`
-
-Do not claim full AOF conformance from partial adoption. `Deferred` and `Unsupported` remain visible gaps.
+For consequential execution, preserve `ExecuteAllowed = C AND H AND P AND S AND R AND V` and route effects through the project Safety Kernel / Effect Boundary model.

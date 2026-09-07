@@ -1,29 +1,27 @@
 ---
 name: aof-agent-design
-description: Design or review AI Agents, their responsibilities, capabilities, delegation, tool use, and interactions under AOF bounded-agency rules.
+description: Design or review AOF Agents of type LLM, Deterministic, Human, Hybrid, or ExternalService, including roles, capabilities, delegation, tools, context, and interactions.
 ---
-
 # AOF Agent Design
 
 ## Trigger
-Use when adding/changing an AI Agent, tool capability, delegation, multi-agent interaction, or agent responsibility.
+Use when adding/changing any operational Agent, Agent role, Capability, delegation, interaction, tool use, context boundary, or Agent replacement.
 
 ## Required reads
 - `aof/agents/inventory.yaml`
 - `aof/agents/capabilities.yaml`
+- `aof/agents/interactions.yaml`
 - `aof/governance/governance-envelope.yaml`
 - `.aof/applicability.yaml`
 
 ## Procedure
-1. State the Agent responsibility in operational terms.
-2. Declare required Capability separately from Authority.
-3. Identify Resources and ContextDescriptor boundaries.
-4. Treat Agent output as `UntrustedProposal` unless a later governance step authorizes action.
-5. For multi-agent systems, require an applicable AgentInteractionContract.
-6. Prevent Agents from expanding their own GovernanceEnvelope.
+1. Identify Agent type and role; Agent type does not determine Authority.
+2. Declare Capability separately from Authority.
+3. Identify Resource and ContextDescriptor boundaries.
+4. Treat discretionary/LLM output as `UntrustedProposal` until governed evaluation.
+5. Require AgentInteractionContract when multi-Agent interaction/delegation is applicable.
+6. Preserve bounded delegation, attenuation, provenance, and GovernanceEnvelope.
+7. Prevent any Agent from expanding its own Authority.
 
 ## Blocking findings
-- Self-granted Authority.
-- Tool access treated as Authority.
-- Delegation without bounded authority/interaction contract where applicable.
-- Agent output directly connected to consequential effect without governance evaluation.
+Self-granted Authority; technical reachability treated as Authority; unbounded delegation; missing interaction contract where required; consequential effect directly connected to discretionary reasoning without governance mediation.

@@ -1,73 +1,72 @@
 # AOF Adoption — {{.Project.Name}}
 
-This repository adopts **AI Orchestration Framework (AOF) v1.0 LTS**.
+This repository targets **AOF v1.0 LTS**.
 
-- Canonical repository: https://github.com/aof-framework/aof
-- Canonical specification: https://github.com/aof-framework/aof/blob/main/specification/AOF-v1.0-Framework-Specification.md
-- Adoption profile: **{{.Adoption.Profile}}**
+## Profile composition
+
+- Target base profile: **{{.Adoption.Profile.TargetBaseProfile}}**
+- Domain profiles: {{join .Adoption.Profile.DomainProfiles ", "}}
+- Strengthening overlays: {{join .Adoption.Profile.Overlays ", "}}
+- Conformance claim: **none**
 - Adoption mode: **{{.Adoption.Mode}}**
 
-## Project Context
+AOF profile selection expresses a **target adoption scope**, not a conformance result.
 
-| Property | Declared value |
-|---|---|
-| Language | {{.Project.Language}} |
-| Type | {{.Project.Type}} |
-| Domain | {{.Project.Domain}} |
-| Architecture | {{.Project.Architecture}} |
-| Deployment | {{.Project.Deployment}} |
-| Criticality | {{.Project.Criticality}} |
-| Data sensitivity | {{.Project.DataSensitivity}} |
+## Project scope
 
-## AI Scope
+- Language: {{.Project.Language}}
+- Type: {{.Project.Type}}
+- Domain: {{.Project.Domain}}
+- Architecture: {{.Project.Architecture}}
+- Deployment: {{.Project.Deployment}}
+- Criticality: {{.Project.Criticality}}
+- Data sensitivity: {{.Project.DataSensitivity}}
+- Agent types: {{join .Project.AgentTypes ", "}}
+- Multi-Agent: {{.Project.MultiAgent}}
+- Consequential AI execution: {{.Project.AI.ConsequentialExecution}}
 
-- AI enabled: {{.Project.AI.Enabled}}
-- Logical agents: {{.Project.AgentCount}}
-- Multi-agent: {{.Project.MultiAgent}}
-- Analysis: {{.Project.AI.Analysis}}
-- Classification: {{.Project.AI.Classification}}
-- Recommendation: {{.Project.AI.Recommendation}}
-- Tool use: {{.Project.AI.ToolUse}}
-- Persistent state mutation: {{.Project.AI.StateMutation}}
-- External action: {{.Project.AI.ExternalAction}}
-- Infrastructure action: {{.Project.AI.InfrastructureAction}}
-- Consequential execution: {{.Project.AI.ConsequentialExecution}}
+## How to read generated AOF state
 
-## Governance Root and Authority
+The project uses distinct dimensions:
 
-The Human/Organization remains the GovernanceRoot. Agent autonomy is bounded by the Human/Organizational GovernanceEnvelope.
+```text
+Applicability != NormativeLevel != AdoptionState != ImplementationState != VerificationState
+```
 
-- Declared Authority holder: **{{.Project.AuthorityHolder}}**
-- Human approval declared: **{{.Project.HumanApproval}}**
-- Policy enforcement mechanism: **{{.Project.PolicyMechanism}}**
+`planned` means the project intends to adopt a control. `not_assessed` means the CLI has not proven an implementation exists. `not_evaluated` means no conformance/verification result exists.
 
-`Capability != Authority` and `Approval != AuthorityGrant` remain mandatory semantic boundaries.
+## Core execution boundary
 
-## Consequential Effects
+For consequential operations:
 
-{{if .Project.AI.ConsequentialExecution}}Consequential AI execution is declared. The project MUST preserve the control predicate `ExecuteAllowed = C AND H AND P AND S AND R AND V`. Mandatory Fail blocks execution and mandatory Pending remains Pending.{{else}}No consequential AI execution is declared. Execution-specific controls may therefore be NotApplicable or Deferred according to `.aof/config.yaml`.{{end}}
+```text
+Agent output
+-> UntrustedProposal
+-> Governance Evaluation
+-> AuthorizedDecision
+-> ExecutionContract
+-> Effect Boundary
+-> Effect
+-> Evidence
+-> Verification
+-> Trace
+```
 
-Declared effect types: {{if .Project.EffectTypes}}{{join .Project.EffectTypes ", "}}{{else}}none{{end}}.
+Mandatory `Pending` is never implicit Allow.
 
-## Risk Scope
+## Generated governance map
 
-Declared risk categories: {{if .Project.RiskCategories}}{{join .Project.RiskCategories ", "}}{{else}}none{{end}}.
+- `.aof/applicability.yaml` — control/object applicability and status dimensions
+- `.aof/requirements.yaml` — requirement IDs traced to the canonical specification
+- `.aof/provenance.json` — pinned LTS checksums
+- `aof/control/` — Safety Kernel and gate mapping
+- `aof/architecture/` — Four Planes, Trust Boundaries, Effect Boundaries
+- `aof/authority/` — Authority lifecycle and scope
+- `aof/policies/` — Policy enforcement/conflict-resolution model
+- `aof/risk/` — dynamic Risk and acceptance model
+- `aof/execution/` — StateTransition, failure/recovery, consequential effects
+- `aof/assurance/` — Evidence, Verification, Trace, accountability
+- `aof/conformance/` — scoped adoption and explicit gaps
+- `aof/schemas/` — pinned canonical AOF v1.0 LTS JSON Schemas
 
-`RiskAssessment != RiskAcceptance`.
-
-## Canonical Object Applicability
-
-The 22 AOF canonical machine-readable object families are mapped in `.aof/applicability.yaml`. This mapping expresses project applicability; it does **not** claim that every required object has already been implemented in application code.
-
-## Control Status and Gaps
-
-- `.aof/config.yaml` — control matrix
-- `.aof/adoption.yaml` — scoped adoption principles and skills
-- `aof/conformance/gaps.md` — Deferred/Unsupported controls and warnings
-- `aof/conformance/scope.yaml` — explicit scoped-conformance posture
-
-`Deferred != Satisfied`, `Unsupported != Satisfied`, and `NotApplicable` MUST reflect true non-applicability rather than convenience.
-
-## Operational Guidance
-
-AI coding agents SHOULD use `AGENTS.md` as a router and load only relevant AOF skills. Rich project-specific context is kept under `aof/`; canonical static semantics remain grounded in AOF v1.0 LTS.
+Canonical upstream: https://github.com/aof-framework/aof

@@ -1,18 +1,5 @@
-# Reviewer Agent
+# Reviewer
 
-## Responsibility
-Review implementation quality and project-specific AOF boundary preservation.
+Review correctness, tests, security, and AOF control boundaries.
 
-## Review procedure
-1. Identify changed behaviors and possible external/persistent effects.
-2. Check whether affected AOF controls/objects are represented correctly.
-3. Verify Capability/Authority and Proposal/Decision separation.
-4. For consequential execution, verify all required gates and deny/Pending behavior.
-5. Verify tests cover unauthorized, policy-fail, risk-fail, invalid-state, and verification-pending paths where applicable.
-6. Report findings as Blocking or Non-blocking.
-
-## Blocking findings
-- `Pending` treated as `Pass`.
-- Missing Authority for authority-sensitive execution.
-- Proposal directly executed as an AuthorizedDecision.
-- False AOF conformance claim.
+Reject changes that blur Proposal/Decision/Action, bypass Control Plane mediation, fail open on mandatory controls, mutate consequential State without controlled transition, lose trace/evidence, or imply AOF conformance from generated bootstrap configuration alone.

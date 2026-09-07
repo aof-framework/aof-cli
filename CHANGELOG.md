@@ -1,33 +1,47 @@
 # Changelog
 
-## v0.2.0 — AOF Context & Adoption Hardening
+## v0.3.0 — Semantic Fidelity & Adoption Hardening
 
 ### Added
 
-- richer interactive project/adoption interview;
-- architecture, deployment, criticality, and data-sensitivity context;
-- Agent topology and expanded AI capability mapping;
-- consequential effect, Authority, Policy, Risk, Evidence, and Verification questions;
-- applicability mapping for all 22 canonical AOF object families;
-- `.aof/adoption.yaml`, `.aof/applicability.yaml`, `.aof/capabilities.yaml`;
-- governance, Agent, Authority, Policy, Risk, Execution, Assurance, and Conformance project models;
-- 10 substantive static AOF Agent Skills installed selectively;
-- richer project-specific skills and Agent role definitions;
-- explicit `aof/conformance/gaps.md`;
-- detailed initialization summary and governance warnings.
+- Requirement-driven applicability model with AOF requirement IDs.
+- Separate target and claimed profile/conformance state.
+- Separate applicability, normative level, adoption, implementation, and verification dimensions.
+- Agent types: LLM, Deterministic, Human, Hybrid, ExternalService.
+- AOF-Secure-SDLC domain profile support.
+- AOF-High-Assurance strengthening overlay support.
+- Four-Plane architecture and Trust/Effect Boundary artifacts.
+- Safety Kernel and `ExecuteAllowed = C AND H AND P AND S AND R AND V` gate mapping.
+- Authority lifecycle/scope/delegation model.
+- Policy conflict-resolution model.
+- Dynamic Risk/residual-risk/failure-budget model.
+- Rich StateTransition and failure/recovery models.
+- Evidence provenance, Verification independence/completion, Trace, and accountability guidance.
+- Human Governance model.
+- Pinned canonical AOF v1.0 LTS JSON Schemas in generated repositories.
+- Upstream specification and schema-bundle SHA-256 provenance.
+- Secure-SDLC and High-Assurance Agent Skills.
+- Broader semantic/profile/negative tests.
 
 ### Changed
 
-- version from `0.1.0` to `0.2.0`;
-- `aof init` now performs applicability analysis rather than only generating generic bootstrap metadata;
-- consequential AI execution now automatically activates stronger AOF control families and canonical objects.
+- `aof init` no longer treats declared/supported controls as implemented.
+- AOF Agent is no longer modeled as AI-only.
+- AOF-Governed and AOF-Assured now include their canonical strengthening semantics.
+- High/Critical consequential scope strengthens verifier-independence requirements.
+- Confidential/Restricted data scope activates context/trace data controls.
+- Existing repositories are identified as brownfield adoption.
+- `.aof/manifest.json` replaced by `.aof/bootstrap-manifest.json` to avoid confusion with canonical ConformanceManifest.
+- Initialization summary explicitly reports no conformance claim.
 
-### Preserved
+### Removed
 
-- AOF v1.0 LTS static semantics;
-- offline initialization;
-- no telemetry;
-- no LLM dependency;
-- no runtime dependency;
-- safe plan-first conflict handling;
-- no silent overwrite.
+- Unused generic `aof-governance` Skill; specific governance Skills are authoritative.
+
+## v0.2.0 — AOF Context & Adoption Hardening
+
+Introduced richer project discovery, canonical-object applicability, substantive Agent Skills, and project governance artifacts.
+
+## v0.1.0 — Complete Bootstrap MVP
+
+Initial safe/offline AOF repository bootstrap with `aof init`, `aof version`, and `aof help`.

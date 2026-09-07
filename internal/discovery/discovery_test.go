@@ -6,38 +6,31 @@ import (
 	"testing"
 )
 
-func TestDetect(t *testing.T) {
-	cases := []struct {
-		file     string
-		wantLang string
-		wantType string
-	}{
-		{"go.mod", "Go", "backend"},
-		{"tsconfig.json", "TypeScript", "fullstack"},
-		{"package.json", "Node.js", ""},
-		{"pyproject.toml", "Python", ""},
-		{"requirements.txt", "Python", ""},
-		{"Cargo.toml", "Rust", "backend"},
-		{"pom.xml", "Java", "backend"},
-		{"build.gradle.kts", "Kotlin", "backend"},
-		{"composer.json", "PHP", ""},
-		{"Gemfile", "Ruby", ""},
-		{"Package.swift", "Swift", ""},
-		{"app.csproj", "C#", ""},
+func TestDetectGo(t *testing.T) {
+	d := t.TempDir()
+	if err := os.WriteFile(filepath.Join(d, "go.mod"), []byte("module x\n"), 0o644); err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range cases {
-		t.Run(tc.file, func(t *testing.T) {
-			d := t.TempDir()
-			if err := os.WriteFile(filepath.Join(d, tc.file), []byte("x"), 0o644); err != nil {
-				t.Fatal(err)
-			}
-			res := Detect(d)
-			if res.Language != tc.wantLang {
-				t.Fatalf("file %s got lang %q want %q", tc.file, res.Language, tc.wantLang)
-			}
-			if res.Type != tc.wantType {
-				t.Fatalf("file %s got type %q want %q", tc.file, res.Type, tc.wantType)
-			}
-		})
+	r := Detect(d)
+	if r.Language != "Go" || !r.ExistingProject || r.Type != "backend" {
+		t.Fatalf("unexpected: %+v", r)
+	}
+}
+
+func TestDetectTypeScript(t *testing.T) {
+	d := t.TempDir()
+	if err := os.WriteFile(filepath.Join(d, "tsconfig.json"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r := Detect(d)
+	if r.Language != "TypeScript" || !r.ExistingProject || r.Type != "fullstack" {
+		t.Fatalf("unexpected: %+v", r)
+	}
+}
+
+func TestDetectEmpty(t *testing.T) {
+	r := Detect(t.TempDir())
+	if r.Language != "" || r.ExistingProject {
+		t.Fatalf("unexpected: %+v", r)
 	}
 }

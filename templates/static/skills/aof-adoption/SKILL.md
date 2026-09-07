@@ -1,31 +1,34 @@
 ---
 name: aof-adoption
-description: Maintain the project's scoped and progressive AOF adoption model without requiring every organization to implement the full framework at once.
+description: Maintain scoped AOF adoption while separating applicability, normative obligation, adoption intent, implementation state, verification state, and conformance claims.
 ---
-
 # AOF Adoption
 
 ## Trigger
-Use when changing AOF profile, project scope, organizational capability, control status, or generated adoption artifacts.
+Use when changing target profile, scope, Agent types, organizational capability, applicability, control planning, or conformance-facing artifacts.
 
 ## Required reads
 - `.aof/project.yaml`
 - `.aof/config.yaml`
 - `.aof/adoption.yaml`
 - `.aof/applicability.yaml`
+- `.aof/requirements.yaml`
 - `aof/conformance/gaps.md`
 
 ## Decision rules
-- `AdoptAOF != ImplementEverything`.
-- `ScopedAdoption -> ScopedConformance`.
-- `Deferred != Satisfied`.
-- `Unsupported != Satisfied`.
+- `Applicability != NormativeLevel != AdoptionState != ImplementationState != VerificationState`.
+- Target profile is not claimed profile.
+- `planned != implemented`.
+- `not_assessed != pass`.
+- `unsupported != satisfied`.
 - `NotApplicable != DisabledForConvenience`.
-- A reduced scope MUST NOT create a full AOF conformance claim.
+- `ScopedAdoption -> ScopedConformance`.
+- Stronger/profile-composed adoption MUST preserve mandatory base requirements.
 
 ## Procedure
-1. Determine whether a control is applicable to declared project behavior.
-2. Separately determine whether the organization can currently support it.
-3. Record the result explicitly as Required, Enabled, Deferred, Unsupported, or NotApplicable.
-4. Update `aof/conformance/gaps.md` for unresolved applicable controls.
-5. Do not weaken canonical semantics to fit organizational capability.
+1. Determine project scope and Agent/effect boundaries.
+2. Determine requirement applicability using requirement IDs and profile composition.
+3. Record adoption intent without asserting implementation.
+4. Require implementation Evidence before changing implementation state.
+5. Require evaluation before changing verification/conformance state.
+6. Report unresolved mandatory requirements as gaps rather than weakening applicability.

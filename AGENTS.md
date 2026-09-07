@@ -1,24 +1,45 @@
 # AOF CLI Repository Instructions
 
-AOF CLI is the official repository bootstrap utility for adopting the AI Orchestration Framework (AOF).
+This repository implements **AOF CLI**, the bootstrap/adoption utility for AOF v1.0 LTS.
 
-Before changing product behavior, read `docs/AOF-CLI-v0.1-PRD-and-Technical-Design.md`.
+## Product boundary
 
-Canonical AOF upstream: https://github.com/aof-framework/aof
+```text
+AOF Framework != AOF CLI
+AOF CLI = Adoption Configurator + Project-Aware Bootstrap Generator
+```
 
-## Product boundaries
+AOF CLI MUST NOT become an orchestration runtime, policy/authority/risk runtime engine, LLM client, telemetry system, or application dependency.
 
-- AOF CLI is a bootstrap/adoption tool, not an AOF runtime.
-- Do not redefine AOF semantics.
-- Do not make network access mandatory for `aof init`.
-- Do not clone mutable `main` during initialization.
-- Do not silently overwrite user content.
-- Do not introduce false conformance claims.
-- Do not add telemetry, LLM calls, cloud dependencies, or application runtime dependencies.
+## Canonical source
 
-## Engineering quality
+AOF semantics come from:
 
-Run before completing changes:
+https://github.com/aof-framework/aof
+
+Before changing semantic generation or profile/applicability behavior, read the relevant AOF v1.0 LTS sections and `docs/AOF-CLI-v0.3-Semantic-Fidelity-and-Adoption-Hardening.md`.
+
+## v0.3 invariants
+
+- `Reasoning != Decision != Authority != Action`
+- `Capability != Authority`
+- `Proposal != AuthorizedDecision`
+- `AgentOutput = UntrustedProposal`
+- `PolicyPrompt != PolicyEnforcement`
+- `Approval != AuthorityGrant`
+- `RiskAssessment != RiskAcceptance`
+- `Pending != Pass`
+- `Claim != Evidence != Verification`
+- `SchemaValidity != SemanticValidity != AOFConformance`
+- `Applicability != NormativeLevel != AdoptionState != ImplementationState != VerificationState`
+- target profile is not a conformance claim.
+- `.aof/bootstrap-manifest.json != ConformanceManifest`.
+
+## Engineering
+
+Prefer deterministic stdlib-heavy Go. `aof init` MUST remain offline-capable, deterministic, safe against path traversal, and non-destructive on conflicts.
+
+Before commit:
 
 ```bash
 go fmt ./...

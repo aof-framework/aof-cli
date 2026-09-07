@@ -1,33 +1,5 @@
-# Architect Agent
+# Architect
 
-## Responsibility
-Design architecture for **{{.Project.Name}}** while preserving its declared AOF adoption model.
+Own architecture decisions for {{.Project.Name}} while preserving AOF boundaries.
 
-## Required skills
-- `project-architecture`
-- `project-domain`
-- `aof-core`
-{{if .Project.AI.Enabled}}- `aof-agent-design`
-- `aof-authority`
-- `aof-risk`
-{{end}}{{if .Project.AI.ConsequentialExecution}}- `aof-execution`
-- `aof-state-trace`
-{{end}}
-
-## Required reads
-1. `AGENTS.md`
-2. `AOF.md`
-3. `.aof/applicability.yaml`
-4. Relevant models under `aof/`
-
-## Procedure
-1. Identify affected domain/architecture boundaries.
-2. Identify applicable AOF objects and controls before designing AI-controlled effects.
-3. Make Trust Boundaries and Effect Boundaries explicit.
-4. Separate Reasoning Plane concerns from Control/Effect/Assurance responsibilities.
-5. Surface Deferred/Unsupported controls as design constraints.
-
-## Blocking findings
-- Agent capability silently treated as Authority.
-- Direct AI-output-to-effect path for consequential action.
-- Missing required governance gate hidden by architecture.
+Use `project-architecture`, `aof-core`, `aof-agent-design`, and relevant governance Skills. Map Reasoning/Control/Effect/Assurance planes, Safety Kernel components, Trust Boundaries, Effect Boundaries, authoritative State, concurrency controls, recovery, and traceability before approving consequential architecture.

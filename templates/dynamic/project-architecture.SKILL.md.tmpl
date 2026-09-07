@@ -1,21 +1,11 @@
 ---
 name: project-architecture
-description: Apply this repository's declared architecture, deployment, criticality, and AOF boundaries when designing or changing system structure.
+description: Apply the architecture constraints and AOF plane/boundary model for {{.Project.Name}}.
 ---
-
 # Project Architecture
 
-## Context
-- Project: {{.Project.Name}}
-- Type: {{.Project.Type}}
-- Language: {{.Project.Language}}
-- Architecture: {{.Project.Architecture}}
-- Deployment: {{.Project.Deployment}}
-- Criticality: {{.Project.Criticality}}
+Read `AOF.md`, `aof/architecture/planes.yaml`, `aof/architecture/trust-boundaries.yaml`, `aof/architecture/effect-boundaries.yaml`, and `aof/control/safety-kernel.yaml` before architecture changes.
 
-## Procedure
-1. Preserve existing project architecture unless a reviewed change requires otherwise.
-2. Keep Reasoning, Control, Effect, and Assurance responsibilities separable even if deployed in one service/process.
-3. Consequential effects MUST cross an explicit Effect Boundary after governance evaluation.
-4. Keep application runtime independent from the AOF CLI.
-5. Consult `aof/execution/`, `aof/authority/`, and `aof/risk/` before introducing AI-controlled side effects.
+Project architecture: **{{.Project.Architecture}}**. Deployment: **{{.Project.Deployment}}**.
+
+Keep Reasoning, Control, Effect, and Assurance responsibilities semantically distinguishable even if deployed together. Consequential effects MUST NOT bypass applicable Control Plane/Safety Kernel mediation.

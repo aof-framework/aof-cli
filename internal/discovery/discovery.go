@@ -6,13 +6,13 @@ import (
 )
 
 type Result struct {
-	Language string
-	Type     string
+	Language        string
+	Type            string
+	ExistingProject bool
 }
 
 func Detect(root string) Result {
-	res := Result{}
-
+	result := Result{}
 	langChecks := []struct {
 		path string
 		lang string
@@ -33,27 +33,35 @@ func Detect(root string) Result {
 		{"Package.swift", "Swift"},
 		{"CMakeLists.txt", "C/C++"},
 	}
-
 	for _, c := range langChecks {
 		if _, err := os.Stat(filepath.Join(root, c.path)); err == nil {
-			res.Language = c.lang
+			result.Language = c.lang
+			result.ExistingProject = true
 			break
 		}
 	}
-
-	if res.Language == "" {
+	if result.Language == "" {
 		if matches, _ := filepath.Glob(filepath.Join(root, "*.csproj")); len(matches) > 0 {
-			res.Language = "C#"
+			result.Language = "C#"
+			result.ExistingProject = true
 		} else if matches, _ := filepath.Glob(filepath.Join(root, "*.sln")); len(matches) > 0 {
-			res.Language = "C#"
+			result.Language = "C#"
+			result.ExistingProject = true
 		}
 	}
-
-	if res.Language == "Go" || res.Language == "Rust" || res.Language == "Java" || res.Language == "Kotlin" {
-		res.Type = "backend"
-	} else if res.Language == "TypeScript" {
-		res.Type = "fullstack"
+	if result.Language == "Go" || result.Language == "Rust" || result.Language == "Java" || result.Language == "Kotlin" {
+		result.Type = "backend"
+	} else if result.Language == "TypeScript" {
+		result.Type = "fullstack"
 	}
-
-	return res
+	if entries, err := os.ReadDir(root); err == nil {
+		for _, e := range entries {
+			if e.Name() == ".git" || e.Name() == ".DS_Store" {
+				continue
+			}
+			result.ExistingProject = true
+			break
+		}
+	}
+	return result
 }
